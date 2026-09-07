@@ -1,0 +1,60 @@
+body {
+    background-color: #d80d0d;
+    font-family: 'Cinzel', serif;
+}
+
+.navbar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    z-index: 10;
+    box-shadow: 0 0 5px #ff8800;
+    background-color: #1A1A24;
+
+}
+
+.navbar-brand {
+    img {
+        width: 100px !important;
+        border: 1px solid #ff8800 !important;
+        border-radius: 10px !important;
+        background-color: #1A1A24;
+    }
+}
+
+.navbar {
+    & .nav-link {
+        color: #ffffff;
+        transition: all 0.3s ease;
+    }
+
+    & .navbar-toggler {
+        background-color: #ffffff;
+    }
+}
+
+.navbar .nav-link:hover {
+    color: #ff8800;
+    transform: scale(1.50);
+    margin: auto 30px;
+    text-decoration: underline 1px;
+    text-decoration-color: #ff8800;
+}
+
+/*aqui começa lista loja nabar*/
+.nav-item {
+    & .dropdown-item {
+        color: #ffffff;
+    }
+}
+
+.dropdown-item:hover {
+    background-color: #ff8800;
+}
+
+.nav-link.dropdown-toggle.show {
+    color: #ff8c00 !important;
+    transform: scale(1.50);
+    margin: auto 30px;
+}
