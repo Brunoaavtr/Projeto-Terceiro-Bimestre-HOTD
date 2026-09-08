@@ -1,46 +1,144 @@
 body {
-    background-color: #d80d0d;
-    font-family: 'Cinzel', serif;
+    background-color: #13131B;
+    font-family: 'Cinzel', 'Rubik';
 }
 
 .navbar {
-    position: fixed;
+    position: relative;
+    z-index: 10;
     top: 0;
     left: 0;
     width: 100%;
-    z-index: 10;
-    box-shadow: 0 0 5px #ff8800;
+    height: 80px;
+    box-shadow: 0 0 5px #FCAF47;
     background-color: #1A1A24;
+    align-items: center;
 
 }
 
-.navbar-brand {
-    img {
-        width: 100px !important;
-        border: 1px solid #ff8800 !important;
-        border-radius: 10px !important;
-        background-color: #1A1A24;
-    }
+/*
+/* transform: Mantenha o translate(-50%) e adicione o scale(1) inicial 
+/* transition: Transição declarada no elemento principal 
+*/
+/* Container que lida com o posicionamento central e recebe a animação AOS */
+.logoCaixa {
+    position: absolute;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%) !important;
+    z-index: 15;
+}
+.logoNavBar {
+    position: absolute;
+    top: 0;
+    left: 50%;
+    transform: translate(-50%, 0) scale(1);
+    width: 150px;
+    height: auto;
+    object-fit: contain;
+    z-index: 15;
+    transition: transform 0.3s ease, top 0.3s ease, filter 0.3s ease;
 }
 
-.navbar {
-    & .nav-link {
-        color: #ffffff;
-        transition: all 0.3s ease;
-    }
-
-    & .navbar-toggler {
-        background-color: #ffffff;
-    }
+/*Botao celular*/
+.navbar-toggler {
+    background-color: #ffffff;
 }
 
-.navbar .nav-link:hover {
-    color: #ff8800;
-    transform: scale(1.50);
-    margin: auto 30px;
-    text-decoration: underline 1px;
-    text-decoration-color: #ff8800;
+/*
+Opção do navbar:
+border transparent: reserva o espaço
+*/
+.nav-link {
+    display: inline-block;
+    vertical-align: middle;
+    line-height: 1;
+
+    text-align: center;
+    color: #FCAF47;
+    font-size: 17px;
+
+    width: 160px;
+    margin: 0px 5px;
+    border: 3px solid #303040;
+    padding: 10px 100px;
+    background: linear-gradient(to top, #13131B, #303040);
+
+    border-radius: 50px;
+    transition: transform 0.3s ease, margin 0.3s ease, background 0.3s ease, color 0.3s ease, border-color 0.3s ease, filter 0.3s ease;
 }
+
+.loginCompra {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin: 5px;
+}
+
+.fa-brands,
+.fa-solid {
+    font-size: 22px;
+    color: #FCAF47;
+
+    /* Centralização rígida do ícone dentro da caixa */
+    display: flex !important;
+    justify-content: center;
+    align-items: center;
+    line-height: 0;
+    /* Remove a linha de texto padrão que joga o ícone para cima */
+
+    /* Tamanho fixo do botão */
+    width: 70px;
+    height: 45px;
+    box-sizing: border-box;
+
+    margin: 0 8px;
+    border: 3px solid #303040;
+    padding: 0;
+
+    background: linear-gradient(to top, #13131B, #303040);
+    border-radius: 50px;
+
+    transition: transform 0.3s ease, background 0.3s ease, color 0.3s ease, border-color 0.3s ease, filter 0.3s ease;
+}
+
+
+
+.logoNavBar:hover {
+    transform: translate(-50%, 0) scale(1.05);
+    top: 5%;
+    filter: drop-shadow(0px 2px 2px rgb(252, 175, 71));
+}
+
+.fa-brands:hover,
+.fa-solid:hover {
+    color: #ffffff;
+    background: linear-gradient(to top, #FCAF47, #D45920);
+    border-color: #fdc070;
+    filter: drop-shadow(0px 2px 2px rgb(252, 175, 71));
+    transform: scale(1.01);
+}
+
+.nav-link:hover {
+    color: #ffffff;
+    background: linear-gradient(to top, #FCAF47, #D45920);
+    border-color: #fdc070;
+    filter: drop-shadow(0px 2px 2px rgb(252, 175, 71));
+    transform: scale(1.01);
+
+}
+
+
+
+
+
+
+
+
+
+
+
+
 
 /*aqui começa lista loja nabar*/
 .nav-item {
@@ -57,4 +155,60 @@ body {
     color: #ff8c00 !important;
     transform: scale(1.50);
     margin: auto 30px;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+.footer {
+    position: fixed;
+    /* Fixa o elemento na tela */
+    bottom: 0;
+    /* Cola na borda inferior */
+    left: 0;
+    /* Alinha na borda esquerda */
+    width: 100%;
+    /* Ocupa a largura total */
+
+    z-index: 999;
+    /* Garante que fique acima de qualquer item da página */
+
+    background-color: #1A1A24;
+    /* Fundo para não transparecer o conteúdo de trás */
+    box-shadow: 0 -2px 10px rgb(18, 18, 26);
+    /* Sombra para dar profundidade */
+
+    color: #ffffff;
+    padding: 15px;
+    box-sizing: border-box;
+}
+
+.redes-sociais {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+footer a {
+    text-decoration: none;
 }
