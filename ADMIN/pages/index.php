@@ -1,3 +1,9 @@
+<?php
+    session_start();
+
+    require "../config.php";
+
+?>
 <!DOCTYPE html>
 <html lang="pt-br">
 
@@ -12,7 +18,7 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js" integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI" crossorigin="anonymous"></script>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
 
-    <link rel="stylesheet" href="CSS/style.css">
+    <link rel="stylesheet" href="../../CSS/style.css">
 <!-- CSS do AOS-->
     <link rel="stylesheet" href="https://unpkg.com/aos@next/dist/aos.css" />
 
@@ -28,6 +34,20 @@
 </head>
 
 <body>
+    <?php
+        //Verificando se esta logado e se esta sendo enviado dados
+        //Verificando se esta logado - mostro a tela de login
+        //se esta logado - mostrar tela inicial
+        if ((!isset ($_SESSION["covilDoDragao"])) && ($_POST)){
+        //Verifica se o usuario e senha são validos
+
+        }else if (!$_SESSION["covilDoDragao"]) {
+            //Mostrar tela de login
+        }else {
+            //Mostrar tela do sistema
+        }
+    ?>
+
     <!--Chama o URL(nome da pagina) amigavel ou a pagina err -->
     <main>
         <?php
@@ -52,7 +72,7 @@
     <nav class="navbar navbar-expand-lg">
         <div class="container-fluid">
 <div class="logoCaixa" data-aos="fade-down" data-aos-easing="linear" data-aos-duration="1500">
-    <img class="logoNavBar" src="IMG/CovilDoDragao.png" alt="home">
+    <img class="logoNavBar" src="../../IMG/CovilDoDragao.png" alt="home">
 </div>
 
             <!--Botão NAVBAR celular-->
@@ -94,7 +114,7 @@
   <footer class="footer">
 
     <div class="redes-sociais">
-      <a href="https://www.instagram.com/cafofo351" target="_blank">
+      <a href="https://www.instagram.com/hdutra.arts/" target="_blank">
         <i class="fa-brands fa-instagram icone-social"></i>
       </a>
 

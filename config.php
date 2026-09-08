@@ -1,6 +1,6 @@
 <?php
 $host = "localhost";
-$db   = "imdb";
+$db = "Projeto-Terceiro-Bimestre-HOTD";
 $user = "root";
 $pass = "";
 
