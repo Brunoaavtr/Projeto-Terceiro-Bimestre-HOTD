@@ -3,6 +3,7 @@
 function redimensionarImagem($origem, $larguraMax, $alturaMax, $qualidade = 100) {
 
     $destino = $origem;
+
     // Verifica se o arquivo existe
     if (!file_exists($origem)) {
         return false;
@@ -27,16 +28,19 @@ function redimensionarImagem($origem, $larguraMax, $alturaMax, $qualidade = 100)
 
     // Cria imagem original conforme tipo
     switch ($tipo) {
+
         case IMAGETYPE_JPEG:
             $imagem = imagecreatefromjpeg($origem);
             break;
+
         case IMAGETYPE_PNG:
             $imagem = imagecreatefrompng($origem);
 
-            // Mantém transparência no PNG
+            // Mantém transparência do PNG
             imagealphablending($novaImagem, false);
             imagesavealpha($novaImagem, true);
             break;
+
         default:
             return false;
     }
@@ -52,9 +56,11 @@ function redimensionarImagem($origem, $larguraMax, $alturaMax, $qualidade = 100)
 
     // Salva a imagem
     switch ($tipo) {
+
         case IMAGETYPE_JPEG:
             imagejpeg($novaImagem, $destino, $qualidade);
             break;
+
         case IMAGETYPE_PNG:
             imagepng($novaImagem, $destino);
             break;
@@ -67,48 +73,69 @@ function redimensionarImagem($origem, $larguraMax, $alturaMax, $qualidade = 100)
     return true;
 }
 
+
 function validarCPF($cpf) {
+
     // Remove tudo que não for número
     $cpf = preg_replace('/\D/', '', $cpf);
 
-    // Verifica se tem 11 dígitos
-    if (strlen($cpf) != 11) {
+    // Verifica se possui 11 dígitos
+    if (strlen($cpf) !== 11) {
         return false;
     }
 
-    // Elimina CPFs inválidos conhecidos (todos iguais)
-    if (preg_match('/(\d)\1{10}/', $cpf)) {
+    // Verifica CPFs com todos os números iguais
+    if (preg_match('/^(\d)\1{10}$/', $cpf)) {
         return false;
     }
 
-    // Validação do 1º dígito verificador
-    for ($t = 9; $t < 11; $t++) {
-        $soma = 0;
+    // Primeiro dígito
+    $soma = 0;
 
-        for ($i = 0; $i < $t; $i++) {
-            $soma += $cpf[$i] * (($t + 1) - $i);
-        }
+    for ($i = 0; $i < 9; $i++) {
+        $soma += $cpf[$i] * (10 - $i);
+    }
 
-        $digito = ((10 * $soma) % 11) % 10;
+    $resto = $soma % 11;
+    $digito1 = ($resto < 2) ? 0 : 11 - $resto;
 
-        if ($cpf[$t] != $digito) {
-            return "CPF inválido";
-        }
+    if ((int)$cpf[9] !== $digito1) {
+        return false;
+    }
+
+    // Segundo dígito
+    $soma = 0;
+
+    for ($i = 0; $i < 10; $i++) {
+        $soma += $cpf[$i] * (11 - $i);
+    }
+
+    $resto = $soma % 11;
+    $digito2 = ($resto < 2) ? 0 : 11 - $resto;
+
+    if ((int)$cpf[10] !== $digito2) {
+        return false;
     }
 
     return true;
 }
 
+
 function mensagem($titulo, $mensagem, $icone) {
+
     ?>
+
     <script>
+
         Swal.fire({
-            title: "<?= $titulo ?>",
-            text: "<?= $mensagem ?>",
-            icon: "<?= $icone ?>"
-        }).then((result) => {
-           history.back(); 
+            title: <?= json_encode($titulo) ?>,
+            text: <?= json_encode($mensagem) ?>,
+            icon: <?= json_encode($icone) ?>
+        }).then(() => {
+            history.back();
         });
+
     </script>
+
     <?php
 }

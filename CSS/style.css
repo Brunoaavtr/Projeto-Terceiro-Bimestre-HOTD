@@ -13,6 +13,31 @@ body {
     box-shadow: 0 0 5px #FCAF47;
     background-color: #1A1A24;
     align-items: center;
+    overflow: visible;
+}
+
+.navbar::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    width: 100%;
+    height: 4px;
+    background: linear-gradient(
+        90deg,
+        #D45920 0%,
+        #ff8800 35%,
+        #ffffff 50%,
+        #ff8800 65%,
+        #D45920 100%
+    );
+    background-size: 200% 100%;
+    animation: bordaNavbar 5s linear infinite;
+    filter:
+        drop-shadow(0 0 1px #D45920)
+        drop-shadow(0 0 1px #ff8800)
+        drop-shadow(0 0 1px #ffffff);
+    z-index: 20;
 }
 
 .navbarConteudo {
@@ -44,7 +69,7 @@ body {
     top: -9px;
     left: 50%;
     transform: translateX(-50%) !important;
-    z-index: 15;
+    z-index: 30;
 }
 
 .logoNavBar {
@@ -55,7 +80,7 @@ body {
     width: 180px;
     height: auto;
     object-fit: contain;
-    z-index: 15;
+    z-index: 30;
     transition: transform 0.3s ease, top 0.3s ease, filter 0.3s ease;
 }
 
@@ -85,7 +110,9 @@ body {
     box-sizing: border-box;
     background: linear-gradient(to top, #13131B, #303040);
     border-radius: 50px;
-    transition: transform 0.3s ease, margin 0.3s ease, background 0.3s ease, color 0.3s ease, border-color 0.3s ease, filter 0.3s ease;
+    transition: transform 0.3s ease, margin 0.3s ease,
+                background 0.3s ease, color 0.3s ease,
+                border-color 0.3s ease, filter 0.3s ease;
 }
 
 .loginCompra {
@@ -111,26 +138,19 @@ body {
     padding: 0;
     background: linear-gradient(to top, #13131B, #303040);
     border-radius: 50px;
-    transition: transform 0.3s ease, background 0.3s ease, color 0.3s ease, border-color 0.3s ease, filter 0.3s ease;
+    transition: transform 0.3s ease, background 0.3s ease,
+                color 0.3s ease, border-color 0.3s ease,
+                filter 0.3s ease;
 }
 
 .navbar-toggler {
     background-color: #ffffff;
 }
+
 label {
     margin: 10px 0 5px 0;
     font-weight: bold;
 }
-
-
-
-
-
-
-
-
-
-
 
 .logoNavBar:hover {
     transform: translate(-50%, 0) scale(1.05);
@@ -154,6 +174,17 @@ label {
     filter: drop-shadow(0px 2px 2px rgb(252, 175, 71));
     transform: scale(1.01);
 }
+
+@keyframes bordaNavbar {
+    from {
+        background-position: 0% 50%;
+    }
+
+    to {
+        background-position: 200% 50%;
+    }
+}
+
 /*---------------------------------------------------------------------------------------------------------------------------------*/
 
 
