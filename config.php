@@ -1,6 +1,6 @@
 <?php
 $host = "localhost";
-$db = "Projeto-Terceiro-Bimestre-HOTD";
+$db = "projeto-terceiro-bimestre-hotd";
 $user = "root";
 $pass = "";
 

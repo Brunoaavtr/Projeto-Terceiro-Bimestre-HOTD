@@ -2,7 +2,7 @@ body {
     background-color: #13131B;
     font-family: 'Cinzel', 'Rubik';
 }
-
+/*---------------------------------------------------------------------------------------------------------------------------------*/
 .navbar {
     position: relative;
     z-index: 10;
@@ -28,6 +28,7 @@ body {
     transform: translateX(-50%) !important;
     z-index: 15;
 }
+
 .logoNavBar {
     position: absolute;
     top: 0;
@@ -99,7 +100,11 @@ border transparent: reserva o espaço
     background: linear-gradient(to top, #13131B, #303040);
     border-radius: 50px;
 
-    transition: transform 0.3s ease, background 0.3s ease, color 0.3s ease, border-color 0.3s ease, filter 0.3s ease;
+    transition: transform 0.3s ease,
+                background 0.3s ease,
+                color 0.3s ease,
+                border-color 0.3s ease,
+                filter 0.3s ease;
 }
 
 
@@ -127,7 +132,7 @@ border transparent: reserva o espaço
     transform: scale(1.01);
 
 }
-
+/*---------------------------------------------------------------------------------------------------------------------------------*/
 
 
 
@@ -158,6 +163,198 @@ border transparent: reserva o espaço
 }
 
 
+/*---------------------------------------------------------------------------------------------------------------------------------*/
+
+/* Aqui comeca a pagina de login */
+
+.login {
+    position: relative;
+    z-index: 0;
+
+    width: 500px;
+    margin: 140px auto;
+
+    border-radius: 10px;
+}
+
+.card {
+    background-color: #22222F;
+    color: #FFF;
+}
+
+.card-header {
+    height: 200px;
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-end;
+
+    border-bottom: 2px solid #13131B;
+}
+
+.card-header h1 {
+    margin: 10px 0 0 0;
+
+    background: linear-gradient(
+        90deg,
+        #D45920 0%,
+        #ff8800 35%,
+        #ffffff 45%,
+        #ffffff 49%,
+        #ffffff 51%,
+        #ffffff 55%,
+        #ff8800 80%,
+        #D45920 100%
+    );
+
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+.login img {
+    position: absolute;
+    top: 0;
+    left: 50%;
+    transform: translate(-50%, -50%) scale(1);
+    width: 250px;
+    height: auto;
+    object-fit: contain;
+    z-index: 15;
+    transition: transform 0.3s ease, filter 0.3s ease;
+
+}
+.login img:hover {
+    filter: drop-shadow(0px 2px 2px rgb(252, 175, 71));
+}
+
+/* Borda LED */
+.login::before {
+    content: "";
+    position: absolute;
+
+    top: -5px;
+    left: -5px;
+    right: -5px;
+    bottom: -5px;
+
+    padding: 5px;
+
+    border-radius: 15px;
+
+    background: conic-gradient(
+        from var(--angulo),
+        #D45920 0%,
+        #ff8800 35%,
+        #D45920 45%,
+        #ffffff 49%,
+        #ffffff 51%,
+        #D45920 55%,
+        #ff8800 80%,
+        #D45920 100%
+    );
+
+    z-index: -1;
+
+    /* Mostra somente a borda */
+    -webkit-mask:
+        linear-gradient(#fff 0 0) content-box,
+        linear-gradient(#fff 0 0);
+
+    -webkit-mask-composite: xor;
+
+    mask:
+        linear-gradient(#fff 0 0) content-box,
+        linear-gradient(#fff 0 0);
+
+    mask-composite: exclude;
+
+    filter:
+        drop-shadow(0 0 4px #D45920)
+        drop-shadow(0 0 7px #ff8800)
+        drop-shadow(0 0 10px #ffffff);
+
+    animation: ledBorda 10s linear infinite;
+}
+
+/* Cria a variável que controla o movimento das cores */
+@property --angulo {
+    syntax: "<angle>";
+    initial-value: 0deg;
+    inherits: false;
+}
+
+/* Faz SOMENTE as cores se movimentarem */
+@keyframes ledBorda {
+    from {
+        --angulo: 0deg;
+    }
+
+    to {
+        --angulo: 360deg;
+    }
+}
+
+.btnLogin {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+
+    width: 100%;
+    margin-top: 10px;
+}
+
+.btnLogin .btn {
+    flex: 1;
+    padding: 12px 20px;
+
+    border: 3px solid #303040;
+    border-radius: 50px;
+
+    background: linear-gradient(to top, #13131B, #303040);
+    color: #FCAF47;
+
+    font-size: 17px;
+
+    transition: transform 0.3s ease,
+                background 0.3s ease,
+                color 0.3s ease,
+                border-color 0.3s ease,
+                filter 0.3s ease;
+}
+
+.btnLogin .btn:hover {
+    color: #ffffff;
+    background: linear-gradient(to top, #FCAF47, #D45920);
+    border-color: #fdc070;
+    filter: drop-shadow(0px 2px 2px rgb(252, 175, 71));
+    transform: scale(1.03);
+}
+/*----------------------------------------------------------------------------------------------------------------------------------------*/
+
+
+
+
+
+
+
+
+
+
+
+
+.navbar {
+    .navbar-nav {
+        .nav-link {
+            color: #FFF !important;
+        }
+    }
+}
+
+label {
+    margin: 10px 0 5px 0;
+    font-weight: bold;
+}
 
 
 
@@ -175,11 +372,7 @@ border transparent: reserva o espaço
 
 
 
-
-
-
-
-
+/*---------------------------------------------------------------------------------------------------------------------------------*/
 .footer {
     position: fixed;
     /* Fixa o elemento na tela */
@@ -212,3 +405,4 @@ border transparent: reserva o espaço
 footer a {
     text-decoration: none;
 }
+/*---------------------------------------------------------------------------------------------------------------------------------*/

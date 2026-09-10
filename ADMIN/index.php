@@ -1,7 +1,7 @@
 <?php
-    session_start();
+session_start();
 
-    require "../config.php";
+require(__DIR__ . "/../../config.php");
 
 ?>
 <!DOCTYPE html>
@@ -12,14 +12,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
     <title>Covil do Dragão</title>
-    <link rel="icon" href="IMG/CovilDoDragao.png">
+    <link rel="icon" href="IMG/logo.png">
 
     <!--Botstrap-->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js" integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI" crossorigin="anonymous"></script>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
 
     <link rel="stylesheet" href="../../CSS/style.css">
-<!-- CSS do AOS-->
+    <!-- CSS do AOS-->
     <link rel="stylesheet" href="https://unpkg.com/aos@next/dist/aos.css" />
 
     <!-- Google fonte -->
@@ -35,45 +35,58 @@
 
 <body>
     <?php
-        //Verificando se esta logado e se esta sendo enviado dados
-        //Verificando se esta logado - mostro a tela de login
-        //se esta logado - mostrar tela inicial
-        if ((!isset ($_SESSION["covilDoDragao"])) && ($_POST)){
+    //Verificando se esta logado e se esta sendo enviado dados
+    //Verificando se esta logado - mostro a tela de login
+    //se esta logado - mostrar tela inicial
+    if ((!isset($_SESSION["fogoEsangue"])) && ($_POST)) {
         //Verifica se o usuario e senha são validos
 
-        }else if (!$_SESSION["covilDoDragao"]) {
-            //Mostrar tela de login
-        }else {
-            //Mostrar tela do sistema
+        //recuperar as variaves email e senha
+        $email = trim($_POST["emial"] ?? NULL);
+        $senha = trim($_POST["senha"] ?? NULL);
+
+        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
         }
+    } else if (!isset($_SESSION["fogoEsangue"])) {
+        //Mostrar tela de login
+        require(__DIR__ . "/login.php");
+    } else {
+        //Mostrar tela do sistema
+    }
     ?>
 
     <!--Chama o URL(nome da pagina) amigavel ou a pagina err -->
     <main>
         <?php
-        if (isset($_GET["param"])) {
-            $p = explode("/", $_GET["param"]);
-        }
+        // recuperar o param enviado pelo htaccess
+        $param = $_GET["param"] ?? "pages/home";
 
-        $page = $p[0] ?? "home";
+        // cadastrar/categoria - listar/categoria
+        $param = explode("/", $param);
 
-        $pagina = "ADMIN/{$page}.php";
+        $pasta = $param[0] ?? NULL;
+        $pagina = $param[1] ?? NULL;
+        $id = $param[2] ?? NULL;
+
+        // montar o nome do arquivo a ser carregado
+        $pagina = "{$pasta}/{$pagina}.php";
 
         // verificar se o arquivo existe
         if (file_exists($pagina)) {
+
             include $pagina;
         } else {
 
-            include "ADMIN/err.php";
+            include "pages/erro.php";
         }
         ?>
     </main>
 
     <nav class="navbar navbar-expand-lg">
         <div class="container-fluid">
-<div class="logoCaixa" data-aos="fade-down" data-aos-easing="linear" data-aos-duration="1500">
-    <img class="logoNavBar" src="../../IMG/CovilDoDragao.png" alt="home">
-</div>
+            <div class="logoCaixa" data-aos="fade-down" data-aos-easing="linear" data-aos-duration="1500">
+                <img class="logoNavBar" src="../../IMG/logo.png" alt="home">
+            </div>
 
             <!--Botão NAVBAR celular-->
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
@@ -111,28 +124,28 @@
     </nav>
 
 
-  <footer class="footer">
+    <footer class="footer">
 
-    <div class="redes-sociais">
-      <a href="https://www.instagram.com/hdutra.arts/" target="_blank">
-        <i class="fa-brands fa-instagram icone-social"></i>
-      </a>
+        <div class="redes-sociais">
+            <a href="https://www.instagram.com/hdutra.arts/" target="_blank">
+                <i class="fa-brands fa-instagram icone-social"></i>
+            </a>
 
-      <a href="https://www.facebook.com/suapagina" target="_blank">
-        <i class="fa-brands fa-tiktok"></i>
-      </a>
+            <a href="https://www.facebook.com/suapagina" target="_blank">
+                <i class="fa-brands fa-tiktok"></i>
+            </a>
 
-      <a href="https://www.instagram.com/brunoaavt/" target="_blank">
-        <i class="fa-solid fa-computer icone-social"></i>
-      </a>
-    </div>
+            <a href="https://www.instagram.com/brunoaavt/" target="_blank">
+                <i class="fa-solid fa-computer icone-social"></i>
+            </a>
+        </div>
 
-  </footer>
+    </footer>
 
-  <!-- JS do AOS -->
+    <!-- JS do AOS -->
     <script src="https://unpkg.com/aos@next/dist/aos.js"></script>
     <script>
-      AOS.init();
+        AOS.init();
     </script>
 </body>
 
