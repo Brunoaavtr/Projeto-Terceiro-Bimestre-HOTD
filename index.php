@@ -84,19 +84,12 @@ if (!isset($_SESSION["fogoEsangue"])) {
 
 <nav class="navbar navbar-expand-lg">
 
-    <div class="container">
+    <div class="container navbarConteudo">
 
-        <div class="logoCaixa" data-aos="fade-down" data-aos-easing="linear" data-aos-duration="1500">
-            <img class="logoNavBar" src="IMG/logo.png" alt="Covil do Dragão">
-        </div>
+        <!-- MENU ESQUERDO -->
+        <div class="menuEsquerdo">
 
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#menuNavbar" aria-controls="menuNavbar" aria-expanded="false" aria-label="Toggle navigation">
-            <span class="navbar-toggler-icon"></span>
-        </button>
-
-        <div class="collapse navbar-collapse" id="menuNavbar">
-
-            <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+            <ul class="navbar-nav mb-2 mb-lg-0">
 
                 <li class="nav-item">
                     <a class="nav-link" href="home">Home</a>
@@ -108,7 +101,8 @@ if (!isset($_SESSION["fogoEsangue"])) {
 
                 <li class="nav-item dropdown">
 
-                    <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                    <a class="nav-link dropdown-toggle" href="#" role="button"
+                        data-bs-toggle="dropdown" aria-expanded="false">
                         Loja
                     </a>
 
@@ -132,9 +126,26 @@ if (!isset($_SESSION["fogoEsangue"])) {
 
             </ul>
 
+        </div>
+
+
+        <!-- LOGO CENTRAL -->
+        <div class="logoCaixa"
+            data-aos="fade-down"
+            data-aos-easing="linear"
+            data-aos-duration="1500">
+
+            <img class="logoNavBar" src="IMG/logo.png" alt="Covil do Dragão">
+
+        </div>
+
+
+        <!-- MENU DIREITO -->
+        <div class="menuDireito">
+
             <?php if (isset($_SESSION["tipo"]) && $_SESSION["tipo"] === "admin") { ?>
 
-                <ul class="navbar-nav ms-auto mb-2 mb-lg-0 menuAdmin">
+                <ul class="navbar-nav mb-2 mb-lg-0 menuAdmin">
 
                     <li class="nav-item">
                         <a class="nav-link" href="colab">Colab</a>
@@ -153,10 +164,29 @@ if (!isset($_SESSION["fogoEsangue"])) {
             <?php } ?>
 
         </div>
-          <div class="loginCompra">
+
+
+        <!-- ÍCONES -->
+        <div class="loginCompra">
+
             <i class="fa-solid fa-cart-shopping"></i>
+
             <i class="fa-solid fa-circle-user"></i>
+
         </div>
+
+
+        <!-- BOTÃO MOBILE -->
+        <button class="navbar-toggler" type="button"
+            data-bs-toggle="collapse"
+            data-bs-target="#menuNavbar"
+            aria-controls="menuNavbar"
+            aria-expanded="false"
+            aria-label="Toggle navigation">
+
+            <span class="navbar-toggler-icon"></span>
+
+        </button>
 
     </div>
 

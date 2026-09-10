@@ -9,21 +9,39 @@ body {
     top: 0;
     left: 0;
     width: 100%;
-    height: 80px;
+    height: 90px;
     box-shadow: 0 0 5px #FCAF47;
     background-color: #1A1A24;
     align-items: center;
-
 }
 
-/*
-/* transform: Mantenha o translate(-50%) e adicione o scale(1) inicial 
-/* transition: Transição declarada no elemento principal 
-*/
-/* Container que lida com o posicionamento central e recebe a animação AOS */
+.navbarConteudo {
+    position: relative;
+    width: 100%;
+    max-width: none;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-left: 15px;
+    padding-right: 15px;
+}
+
+.menuEsquerdo {
+    display: flex;
+    align-items: center;
+    margin-right: auto;
+}
+
+.menuEsquerdo .navbar-nav {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
 .logoCaixa {
     position: absolute;
-    top: 0;
+    top: -9px;
     left: 50%;
     transform: translateX(-50%) !important;
     z-index: 15;
@@ -34,22 +52,24 @@ body {
     top: 0;
     left: 50%;
     transform: translate(-50%, 0) scale(1);
-    width: 150px;
+    width: 180px;
     height: auto;
     object-fit: contain;
     z-index: 15;
     transition: transform 0.3s ease, top 0.3s ease, filter 0.3s ease;
 }
 
-/*Botao celular*/
-.navbar-toggler {
-    background-color: #ffffff;
+.menuDireito {
+    display: flex;
+    align-items: center;
+    margin-left: auto;
 }
 
-/*
-Opção do navbar:
-border transparent: reserva o espaço
-*/
+.menuAdmin {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
 
 .nav-link {
     display: inline-block;
@@ -59,7 +79,7 @@ border transparent: reserva o espaço
     color: #FCAF47;
     font-size: 17px;
     width: 160px;
-    margin: 0 5px;
+    margin: 0;
     border: 3px solid #303040;
     padding: 10px 20px;
     box-sizing: border-box;
@@ -72,43 +92,43 @@ border transparent: reserva o espaço
     display: flex;
     justify-content: center;
     align-items: center;
-    margin: 5px;
+    margin-left: 10px;
 }
 
 .fa-brands,
 .fa-solid {
     font-size: 22px;
     color: #FCAF47;
-
-    /* Centralização rígida do ícone dentro da caixa */
     display: flex !important;
     justify-content: center;
     align-items: center;
     line-height: 0;
-    /* Remove a linha de texto padrão que joga o ícone para cima */
-
-    /* Tamanho fixo do botão */
-    width: 70px;
+    width: 50px;
     height: 45px;
     box-sizing: border-box;
-
-    margin: 0 8px;
+    margin: 0 5px;
     border: 3px solid #303040;
     padding: 0;
-
     background: linear-gradient(to top, #13131B, #303040);
     border-radius: 50px;
+    transition: transform 0.3s ease, background 0.3s ease, color 0.3s ease, border-color 0.3s ease, filter 0.3s ease;
+}
 
-    transition: transform 0.3s ease,
-                background 0.3s ease,
-                color 0.3s ease,
-                border-color 0.3s ease,
-                filter 0.3s ease;
+.navbar-toggler {
+    background-color: #ffffff;
 }
-.menuAdmin {
-    display: flex;
-    align-items: center;
+label {
+    margin: 10px 0 5px 0;
+    font-weight: bold;
 }
+
+
+
+
+
+
+
+
 
 
 
@@ -133,7 +153,6 @@ border transparent: reserva o espaço
     border-color: #fdc070;
     filter: drop-shadow(0px 2px 2px rgb(252, 175, 71));
     transform: scale(1.01);
-
 }
 /*---------------------------------------------------------------------------------------------------------------------------------*/
 
@@ -339,25 +358,6 @@ border transparent: reserva o espaço
 
 
 
-
-
-
-
-
-
-
-.navbar {
-    .navbar-nav {
-        .nav-link {
-            color: #FFF !important;
-        }
-    }
-}
-
-label {
-    margin: 10px 0 5px 0;
-    font-weight: bold;
-}
 
 
 
