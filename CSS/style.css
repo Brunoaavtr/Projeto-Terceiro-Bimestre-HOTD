@@ -3019,7 +3019,7 @@ input[name="nome"]::placeholder { color: #999999; }
 
 .communityTopo {
     max-width: 850px;
-    margin: 0 auto 55px;
+    margin: 25px auto 55px;
     text-align: center;
 }
 

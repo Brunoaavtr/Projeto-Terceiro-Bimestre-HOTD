@@ -4,11 +4,11 @@ import type {
     VendaDetalhada,
     RespostaVendas
 } from "./tipos.js";
-
-/* Carrega os dados consolidados do dashboard pela API. */
+/*mostrar api e fluxo assi*/
+/* Carrega os dados consolidados do dashboard pela API*/
 async function carregarDashboard(): Promise<RespostaDashboard> {
     try {
-        /* Faz a requisição para a API do dashboard. */
+        /* Faz a requisição para a API do dashboard */
         const resposta = await fetch("ADMIN/api/dashboard.php");
 
         if (!resposta.ok) {
@@ -17,8 +17,8 @@ async function carregarDashboard(): Promise<RespostaDashboard> {
 
         /* Converte a resposta da API para o tipo do dashboard. */
         const dados: RespostaDashboard = await resposta.json();
-
-        /* Converte os valores recebidos da API para números. */
+        /*mostrar map2
+        /* Converte os valores recebidos da API para números */
         dados.dados = dados.dados.map((produto: ProdutoDashboard): ProdutoDashboard => {
             return {
                 ID_PRODUTO: Number(produto.ID_PRODUTO),
@@ -34,7 +34,7 @@ async function carregarDashboard(): Promise<RespostaDashboard> {
         return dados;
 
     } catch (erro) {
-        /* Mostra o erro no console caso a API não responda corretamente. */
+        /* Mostra o erro no console caso a API não responda corretamente*/
         console.error("Falha ao carregar o dashboard:", erro);
 
         return {
@@ -48,20 +48,21 @@ async function carregarDashboard(): Promise<RespostaDashboard> {
     }
 }
 
-/* Carrega os dados detalhados das vendas pela API. */
+/* Carrega os dados detalhados das vendas pela API*/
 async function carregarVendas(): Promise<RespostaVendas> {
     try {
-        /* Faz a requisição para a API de vendas. */
+        /*mostar api assi*/
+        /* Faz a requisição para a API de vendas e o await faz esperar*/
         const resposta = await fetch("ADMIN/api/vendas.php");
 
         if (!resposta.ok) {
             throw new Error(`Erro na requisição: Status ${resposta.status}`);
         }
 
-        /* Converte a resposta da API para o tipo de vendas. */
+        /* Converte a resposta da API para o tipo de vendas*/
         const dados: RespostaVendas = await resposta.json();
 
-        /* Converte os valores recebidos da API para números. */
+        /* Converte os valores recebidos da API para números*/
         dados.dados = dados.dados.map((venda: VendaDetalhada): VendaDetalhada => {
             return {
                 ID_PEDIDO: Number(venda.ID_PEDIDO),
@@ -80,7 +81,7 @@ async function carregarVendas(): Promise<RespostaVendas> {
         return dados;
 
     } catch (erro) {
-        /* Mostra o erro no console caso a API não responda corretamente. */
+        /* Mostra o erro no console caso a API não responda corretamente*/
         console.error("Falha ao carregar as vendas:", erro);
 
         return {
@@ -94,7 +95,10 @@ async function carregarVendas(): Promise<RespostaVendas> {
     }
 }
 
-/* Filtra as vendas de acordo com a categoria selecionada. */
+
+
+
+/* Filtra as vendas de acordo com a categoria selecionada*/
 function filtrarVendasPorCategoria(
     vendas: VendaDetalhada[],
     categoriaSelecionada: number | null
@@ -104,7 +108,7 @@ function filtrarVendasPorCategoria(
     });
 }
 
-/* Filtra as vendas de acordo com o período selecionado. */
+/* Filtra as vendas de acordo com o período selecionado*/
 function filtrarVendasPorPeriodo(
     vendas: VendaDetalhada[],
     dataInicial: string | null,
@@ -132,7 +136,11 @@ function filtrarVendasPorPeriodo(
     });
 }
 
-/* Calcula as principais métricas das vendas. */
+
+
+
+
+/* Calcula as principais métricas das vendas*/
 function calcularMetricasVendas(
     vendas: VendaDetalhada[]
 ): {
@@ -140,11 +148,14 @@ function calcularMetricasVendas(
     faturamento: number;
     produtosVendidos: number;
 } {
-    /* Soma a quantidade total de produtos vendidos. */
+     /**mostrar reduce */
+    /* Soma a quantidade total de produtos vendidos*/
     const quantidadeVendida = vendas.reduce(
         (total: number, venda: VendaDetalhada): number => {
-            const quantidade = Number(venda.QT_PRODUTO);
 
+            
+            const quantidade = Number(venda.QT_PRODUTO);
+            /*mostrar que n retorna nan */
             if (!Number.isFinite(quantidade)) {
                 return total;
             }
@@ -153,23 +164,32 @@ function calcularMetricasVendas(
         },
         0
     );
-
-    /* Calcula o faturamento total das vendas. */
+    /**mostrar reduce */
+    /* Calcula o faturamento total das vendas*/
     const faturamento = vendas.reduce(
         (total: number, venda: VendaDetalhada): number => {
             const quantidade = Number(venda.QT_PRODUTO);
             const valorUnitario = Number(venda.VL_UNITARIO);
-
+                /** Antes de incluir o registro no cálculo, verificamos se os valores sao numeros valido */
             if (!Number.isFinite(quantidade) || !Number.isFinite(valorUnitario)) {
                 return total;
             }
-
+            /**acumula */
             return total + quantidade * valorUnitario;
         },
         0
     );
 
-    /* Cria uma lista com os IDs dos produtos vendidos sem repetição. */
+
+
+
+
+
+
+
+
+
+    /* Cria uma lista com os IDs dos produtos vendidos sem repetição*/
     const produtosUnicos = new Set<number>();
 
     vendas.forEach((venda: VendaDetalhada): void => {
@@ -187,7 +207,11 @@ function calcularMetricasVendas(
     };
 }
 
-/* Encontra o produto que possui a maior quantidade de vendas. */
+
+
+
+
+/* Encontra o produto que possui a maior quantidade de vendas*/
 function encontrarProdutoMaisVendidoVendas(
     vendas: VendaDetalhada[]
 ): {
@@ -198,10 +222,19 @@ function encontrarProdutoMaisVendidoVendas(
         return null;
     }
 
-    /* Guarda a quantidade vendida de cada produto. */
+
+
+
+
+
+
+
+
+
+    /* Guarda a quantidade vendida de cada produto*/
     const frequenciaProdutos: Record<number, number> = {};
 
-    /* Guarda o nome de cada produto pelo seu ID. */
+    /* Guarda o nome de cada produto pelo seu ID */
     const nomesProdutos: Record<number, string> = {};
 
     vendas.forEach((venda: VendaDetalhada): void => {
@@ -211,7 +244,7 @@ function encontrarProdutoMaisVendidoVendas(
         if (!Number.isFinite(idProduto) || !Number.isFinite(quantidade)) {
             return;
         }
-
+        /**mostrar oq rendeu */
         frequenciaProdutos[idProduto] = (frequenciaProdutos[idProduto] ?? 0) + quantidade;
         nomesProdutos[idProduto] = venda.NM_PRODUTO;
     });
@@ -219,9 +252,10 @@ function encontrarProdutoMaisVendidoVendas(
     let idMaisVendido: number | null = null;
     let maiorQuantidade = 0;
 
-    /* Procura o produto com a maior quantidade vendida. */
+    /* Procura o produto com a maior quantidade vendida*/
     Object.entries(frequenciaProdutos).forEach(
         ([id, quantidade]: [string, number]): void => {
+            /**mostrar oq rendeu */
             if (quantidade > maiorQuantidade) {
                 maiorQuantidade = quantidade;
                 idMaisVendido = Number(id);
@@ -238,8 +272,8 @@ function encontrarProdutoMaisVendidoVendas(
         quantidade: maiorQuantidade
     };
 }
-
-/* Transforma os dados das vendas para serem exibidos na tabela. */
+/*Mostrar map */
+/* Transforma os dados das vendas para serem exibidos na tabela*/
 function transformarVendas(
     vendas: VendaDetalhada[]
 ): Array<{
@@ -250,6 +284,7 @@ function transformarVendas(
     faturamento: number;
     faturamentoFormatado: string;
 }> {
+    /*mostrar map */
     return vendas.map((venda: VendaDetalhada) => {
         const quantidade = Number(venda.QT_PRODUTO);
         const faturamento = Number(venda.VL_UNITARIO) * quantidade;
@@ -260,6 +295,7 @@ function transformarVendas(
             categoria: venda.NM_CATEGORIA,
             quantidade,
             faturamento,
+            /*map() para transformar cada venda recebida da API em um novo objeto preparado */
             faturamentoFormatado: faturamento.toLocaleString("pt-BR", {
                 style: "currency",
                 currency: "BRL"
@@ -267,8 +303,8 @@ function transformarVendas(
         };
     });
 }
-
-/* Exibe as métricas calculadas nos cards do dashboard. */
+/*mostra ed*/
+/* Exibe as métricas calculadas nos cards do dashboard*/
 function exibirMetricas(vendas: VendaDetalhada[]): void {
     /* Pega os elementos onde as métricas serão exibidas. */
     const totalVendido = document.getElementById("total-vendido");
@@ -279,8 +315,8 @@ function exibirMetricas(vendas: VendaDetalhada[]): void {
     if (!totalVendido || !faturamentoTotal || !produtosVendidos || !produtoMaisVendido) {
         return;
     }
-
-    /* Mostra valores zerados quando não existem vendas. */
+    /*mostrar ed e nan*/
+    /* Mostra valores zerados quando não existem vendas*/
     if (vendas.length === 0) {
         totalVendido.innerText = "0";
         faturamentoTotal.innerText = "R$ 0,00";
@@ -289,7 +325,7 @@ function exibirMetricas(vendas: VendaDetalhada[]): void {
         return;
     }
 
-    /* Calcula as métricas e o produto mais vendido. */
+    /* Calcula as métricas e o produto mais vendido*/
     const metricas = calcularMetricasVendas(vendas);
     const produtoRanking = encontrarProdutoMaisVendidoVendas(vendas);
 
@@ -302,15 +338,14 @@ function exibirMetricas(vendas: VendaDetalhada[]): void {
 
     produtosVendidos.innerText = metricas.produtosVendidos.toString();
 
-    /* Mostra o produto que ficou em primeiro no ranking. */
+    /* Mostra o produto que ficou em primeiro no ranking */
     if (produtoRanking) {
         produtoMaisVendido.innerText = `${produtoRanking.nome} (${produtoRanking.quantidade} un.)`;
     } else {
         produtoMaisVendido.innerText = "Nenhum";
     }
 }
-
-/* Exibe os produtos filtrados na tabela do dashboard. */
+/* Exibe os produtos filtrados na tabela do dashboard */
 function exibirTabela(
     produtos: ReturnType<typeof transformarVendas>
 ): void {
@@ -321,10 +356,10 @@ function exibirTabela(
         return;
     }
 
-    /* Limpa os dados anteriores da tabela. */
+    /* Limpa os dados anteriores da tabela*/
     tabela.innerHTML = "";
-
-    /* Mostra uma mensagem quando não existem dados. */
+    /*mostrar n é numero*/
+    /* Mostra uma mensagem quando não existem dados*/
     if (produtos.length === 0) {
         tabela.innerHTML = `
             <tr>
@@ -334,7 +369,7 @@ function exibirTabela(
         return;
     }
 
-    /* Cria uma linha para cada produto. */
+    /* Cria uma linha para cada produto*/
     produtos.forEach((produto): void => {
         const linha = document.createElement("tr");
 
@@ -350,20 +385,20 @@ function exibirTabela(
     });
 };
 
-/* Aguarda o carregamento completo da página. */
+/* Aguarda o carregamento completo da página*/
 document.addEventListener("DOMContentLoaded", async (): Promise<void> => {
-    /* Carrega os dados das duas APIs. */
+    /* Carrega os dados das duas APIs */
     const resultado: RespostaDashboard = await carregarDashboard();
     const resultadoVendas: RespostaVendas = await carregarVendas();
 
-    /* Mostra no console os dados recebidos pelas APIs. */
+    /* Mostra no console os dados recebidos pelas APIs*/
     console.log("Dados recebidos da API do dashboard:", resultado);
     console.log("Dados recebidos da API de vendas:", resultadoVendas);
 
-    /* Pega o elemento utilizado para mostrar mensagens de erro. */
+    /* Pega o elemento utilizado para mostrar mensagens de erro */
     const mensagem = document.getElementById("mensagem-dashboard");
 
-    /* Verifica se houve erro na API do dashboard. */
+    /* Verifica se houve erro na API do dashboard*/
     if (!resultado.sucesso) {
         if (mensagem) {
             mensagem.innerText = resultado.erro ?? "Erro ao carregar os dados.";
@@ -372,7 +407,7 @@ document.addEventListener("DOMContentLoaded", async (): Promise<void> => {
         return;
     }
 
-    /* Verifica se houve erro na API de vendas. */
+    /* Verifica se houve erro na API de vendas*/
     if (!resultadoVendas.sucesso) {
         if (mensagem) {
             mensagem.innerText = resultadoVendas.erro ?? "Erro ao carregar as vendas.";
@@ -381,62 +416,62 @@ document.addEventListener("DOMContentLoaded", async (): Promise<void> => {
         return;
     }
 
-    /* Pega os elementos utilizados pelos filtros. */
+    /* Pega os elementos utilizados pelos filtros*/
     const filtroCategoria = document.getElementById("filtro-categoria") as HTMLSelectElement | null;
     const dataInicial = document.getElementById("data-inicial") as HTMLInputElement | null;
     const dataFinal = document.getElementById("data-final") as HTMLInputElement | null;
 
-    /* Atualiza os dados sempre que algum filtro for alterado. */
+    /* Atualiza os dados sempre que algum filtro for alterado*/
     const atualizarFiltros = (): void => {
         const valorCategoria = filtroCategoria?.value ?? "";
 
-        /* Converte a categoria selecionada para número. */
+        /* Converte a categoria selecionada para número*/
         const categoriaSelecionada: number | null = valorCategoria === "" ? null : Number(valorCategoria);
 
         let vendasFiltradas = resultadoVendas.dados;
 
-        /* Aplica o filtro de categoria. */
+        /* Aplica o filtro de categoria*/
         vendasFiltradas = filtrarVendasPorCategoria(
             vendasFiltradas,
             categoriaSelecionada
         );
 
-        /* Aplica o filtro de período. */
+        /* Aplica o filtro de período*/
         vendasFiltradas = filtrarVendasPorPeriodo(
             vendasFiltradas,
             dataInicial?.value || null,
             dataFinal?.value || null
         );
 
-        /* Transforma os dados para exibição. */
+        /* Transforma os dados para exibição */
         const produtosTransformados = transformarVendas(vendasFiltradas);
 
-        /* Atualiza as métricas e a tabela. */
+        /* Atualiza as métricas e a tabela*/
         exibirMetricas(vendasFiltradas);
         exibirTabela(produtosTransformados);
 
-        /* Mostra os filtros e resultados no console. */
+        /* Mostra os filtros e resultados no console*/
         console.log("Categoria:", categoriaSelecionada);
         console.log("Data inicial:", dataInicial?.value || "Todas");
         console.log("Data final:", dataFinal?.value || "Todas");
         console.log("Vendas filtradas:", vendasFiltradas);
     };
 
-    /* Adiciona o evento de alteração ao filtro de categoria. */
+    /* Adiciona o evento de alteração ao filtro de categoria*/
     if (filtroCategoria) {
         filtroCategoria.addEventListener("change", atualizarFiltros);
     }
 
-    /* Adiciona o evento de alteração à data inicial. */
+    /* Adiciona o evento de alteração à data inicial*/
     if (dataInicial) {
         dataInicial.addEventListener("change", atualizarFiltros);
     }
 
-    /* Adiciona o evento de alteração à data final. */
+    /* Adiciona o evento de alteração à data final*/
     if (dataFinal) {
         dataFinal.addEventListener("change", atualizarFiltros);
     }
 
-    /* Exibe o dashboard inicialmente sem filtros. */
+    /* Exibe o dashboard inicialmente sem filtros*/
     atualizarFiltros();
 });

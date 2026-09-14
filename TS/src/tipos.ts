@@ -1,4 +1,4 @@
-/* Define os dados dos produtos exibidos no dashboard. */
+/* Define os dados dos produtos exibidos no dashboard*/
 export interface ProdutoDashboard {
     ID_PRODUTO: number;
     NM_PRODUTO: string;
@@ -9,7 +9,7 @@ export interface ProdutoDashboard {
     VL_FATURADO: number | null;
 }
 
-/* Define a resposta recebida pela API do dashboard. */
+/* Define a resposta recebida pela API do dashboard*/
 export interface RespostaDashboard {
     sucesso: boolean;
     pagina: number;
@@ -19,7 +19,7 @@ export interface RespostaDashboard {
     erro?: string;
 }
 
-/* Define os dados detalhados de cada venda. */
+/* Define os dados detalhados de cada venda */
 export interface VendaDetalhada {
     ID_PEDIDO: number;
     DT_PEDIDO: string;
@@ -33,7 +33,7 @@ export interface VendaDetalhada {
     VL_SUBTOTAL: number;
 }
 
-/* Define a resposta recebida pela API de vendas detalhadas. */
+/* Define a resposta recebida pela API de vendas detalhadas */
 export interface RespostaVendas {
     sucesso: boolean;
     categoria: number | null;

@@ -20,6 +20,7 @@ header("Content-Type: application/json; charset=UTF-8");
 require_once(__DIR__ . "/../../config.php");
 
 try {
+    /*Esses parâmetros vêm pela URL, antes de usar, validamos */
     $pagina = filter_input(INPUT_GET, "pagina", FILTER_VALIDATE_INT);
     $porPagina = filter_input(INPUT_GET, "por_pagina", FILTER_VALIDATE_INT);
     $categoria = filter_input(INPUT_GET, "categoria", FILTER_VALIDATE_INT);
@@ -30,12 +31,12 @@ try {
     if ($categoria === false || $categoria === null || $categoria <= 0) {
         $categoria = null;
     }
-
+    /*chama a Stored e envia dados*/
     $stmt = $pdo->prepare("CALL sp_dashboard_produtos(:pagina, :por_pagina, :categoria)");
 
     $stmt->bindValue(":pagina", $pagina, PDO::PARAM_INT);
     $stmt->bindValue(":por_pagina", $porPagina, PDO::PARAM_INT);
-
+    /*Utilizamos parâmetros preparados com PDO em vez de concatenar valores diretamente no SQL */
     if ($categoria === null) {
         $stmt->bindValue(":categoria", null, PDO::PARAM_NULL);
     } else {
@@ -43,7 +44,8 @@ try {
     }
 
     $stmt->execute();
-
+    
+    /*convertido em JSON */
     $dados = $stmt->fetchAll(PDO::FETCH_ASSOC);
     $stmt->closeCursor();
 
