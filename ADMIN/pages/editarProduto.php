@@ -196,8 +196,12 @@ $imagens = $consultaImagens->fetchAll(PDO::FETCH_ASSOC);
 
                                 <div class="col-12 col-md-4">
                                     <div class="border rounded p-2 text-center">
+                                        <?php
+                                        $urlImagem = urlImagemProduto($imagem["DS_IMAGEM"]);
+                                        $versaoImagem = versaoImagemProduto($imagem["DS_IMAGEM"]);
+                                        ?>
                                         <img
-                                            src="<?= htmlspecialchars($imagem["DS_IMAGEM"]) ?>"
+                                            src="<?= htmlspecialchars($urlImagem) ?><?= $versaoImagem !== "" ? "?v=" . urlencode($versaoImagem) : "" ?>"
                                             alt="Imagem do produto"
                                             class="img-fluid">
 

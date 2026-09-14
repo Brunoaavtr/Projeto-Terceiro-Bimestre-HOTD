@@ -1,16 +1,40 @@
-<div class="error mt-5 mb-5 shadow">
-    <div class="container p-5">
-        <div class="row">
-            <div class="col-12 col-md-4">
-                <h1><strong>404</strong><br>Error</h1>
-            </div>
-            <div class="col-12 col-md-8 p-5">
-                <h2>Ops... A página que esta tentando acessar não existe ou foi removida.</h2>
-                <p>
-                    <a href="home" class="btn btn-warning">
-                        Voltar a página Inicial
-                    </a>
-                </p>
-            </div>
+<?php
+/*
+Este arquivo representa a página de erro do Covil do Dragão.
+
+Ela é exibida quando o usuário tenta acessar uma página ou rota que não existe
+dentro do projeto.
+
+A página utiliza a mesma identidade visual das demais áreas do site, mostrando
+a logo do Covil, o código de erro 404, uma mensagem explicativa e um botão para
+retornar à página inicial.
+
+O endereço da Home utiliza a variável $baseUrl definida no index.php, evitando
+caminhos fixos ou incorretos caso o projeto esteja dentro de uma pasta no XAMPP.
+*/
+?>
+
+<section class="paginaErro">
+    <div class="erroPainel">
+
+        <div class="erroLogo">
         </div>
+
+        <div class="erroConteudo">
+            <span class="erroCodigo">404</span>
+
+            <h1>Este caminho não leva ao Covil</h1>
+
+            <p>
+                A página que você tentou acessar não existe,
+                foi removida ou está em um endereço diferente.
+            </p>
+
+            <a href="<?= $baseUrl ?>/home" class="botaoCovil">
+                <i class="fa-solid fa-dragon"></i>
+                Voltar ao Covil
+            </a>
+        </div>
+
     </div>
+</section>

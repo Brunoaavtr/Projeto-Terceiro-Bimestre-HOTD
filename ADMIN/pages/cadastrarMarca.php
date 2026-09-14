@@ -17,7 +17,7 @@ if (!isset($_SESSION["tipo"]) || (int)$_SESSION["tipo"] !== 2) {
 
             <div class="card-body p-4">
                 <!-- Formulário para cadastrar a marca. -->
-                <form method="post" action="index.php?param=salvar/marca" enctype="multipart/form-data">
+                <form method="post" action="<?= $baseUrl ?>/index.php?param=salvar/marca" enctype="multipart/form-data">
                     <div class="mb-4">
                         <div class="tituloCampoMarca">Nome da marca:</div>
                         <input type="text" name="nome" id="nome" class="form-control" placeholder="Digite o nome da marca" required>

@@ -178,7 +178,7 @@ if ($rota === "carrinho" && $subrota !== null && $subrota !== "itens") {
   
     <link rel="icon" href="<?= $baseUrl ?>/IMG/logo.png">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="<?= $baseUrl ?>/CSS/style.css">
+    <link rel="stylesheet" href="<?= $baseUrl ?>/CSS/style.css?v=<?= filemtime(__DIR__ . "/CSS/style.css") ?>">
     <link rel="stylesheet" href="https://unpkg.com/aos@next/dist/aos.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
 
@@ -344,6 +344,26 @@ if ($rota === "carrinho" && $subrota !== null && $subrota !== "itens") {
     <script>
         AOS.init();
     </script>
+
+    <?php
+    $mensagemFlash = $_SESSION["mensagemFlash"] ?? null;
+    unset($_SESSION["mensagemFlash"]);
+    ?>
+
+    <?php if ($mensagemFlash): ?>
+        <script>
+        Swal.fire({
+            title: <?= json_encode($mensagemFlash["titulo"]) ?>,
+            text: <?= json_encode($mensagemFlash["texto"]) ?>,
+            icon: <?= json_encode($mensagemFlash["icone"]) ?>,
+            customClass: {
+                popup: "popupCovil",
+                confirmButton: "botaoPopup"
+            },
+            buttonsStyling: false
+        });
+        </script>
+    <?php endif; ?>
 
     <?php if ($rota === "dashboard"): ?>
 

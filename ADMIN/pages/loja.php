@@ -1,161 +1,261 @@
 <?php
+/*
+    Página principal da loja do Covil do Dragão.
 
-/* Verifica a categoria selecionada pela URL. */
+    A vitrine foi reorganizada para se aproximar da experiência da Home e da
+    Glitch Productions Store: produtos em uma grade visual, imagem em destaque,
+    categoria, nome, preço, estado do estoque e ação de compra no próprio card.
+
+    A página também permite pesquisar produtos, filtrar por categoria e marca e
+    escolher a ordenação sem alterar a estrutura do banco de dados.
+*/
+
+$busca = trim($_GET["q"] ?? "");
 $categoriaSelecionada = filter_input(INPUT_GET, "categoria", FILTER_VALIDATE_INT);
+$marcaSelecionada = filter_input(INPUT_GET, "marca", FILTER_VALIDATE_INT);
+$ordenacao = $_GET["ordenar"] ?? "recentes";
+$ordenacoesPermitidas = ["recentes", "nome", "precoMenor", "precoMaior"];
 
+if (!in_array($ordenacao, $ordenacoesPermitidas, true)) {
+    $ordenacao = "recentes";
+}
+
+$categoriasLoja = [];
+$marcasLoja = [];
 $produtos = [];
-$nomeCategoria = "Todos os produtos";
 
-/* Busca o nome da categoria selecionada. */
-if ($categoriaSelecionada) {
-    $sqlCategoria = "SELECT NM_CATEGORIA
-                     FROM categoria
-                     WHERE ID_CATEGORIA = :id
-                     AND FL_ATIVO = 1
-                     LIMIT 1";
+try {
+    $categoriasLoja = $pdo->query(
+        "SELECT ID_CATEGORIA, NM_CATEGORIA
+         FROM categoria
+         WHERE FL_ATIVO = 1
+         ORDER BY NM_CATEGORIA"
+    )->fetchAll(PDO::FETCH_ASSOC);
 
-    /* Executa a consulta da categoria. */
-    $consultaCategoria = $pdo->prepare($sqlCategoria);
-    $consultaCategoria->bindValue(":id", $categoriaSelecionada, PDO::PARAM_INT);
-    $consultaCategoria->execute();
+    $marcasLoja = $pdo->query(
+        "SELECT ID_MARCA, NM_MARCA
+         FROM marca
+         WHERE FL_ATIVO = 1
+         ORDER BY NM_MARCA"
+    )->fetchAll(PDO::FETCH_ASSOC);
 
-    /* Guarda os dados da categoria. */
-    $categoria = $consultaCategoria->fetch(PDO::FETCH_ASSOC);
+    $sql = "SELECT
+                p.ID_PRODUTO,
+                p.NM_PRODUTO,
+                p.VL_PRODUTO,
+                p.QT_ESTOQUE,
+                m.NM_MARCA,
+                c.NM_CATEGORIA,
+                (
+                    SELECT pi.DS_IMAGEM
+                    FROM produto_imagem pi
+                    WHERE pi.ID_PRODUTO = p.ID_PRODUTO
+                    ORDER BY pi.FL_PRINCIPAL DESC, pi.NR_ORDEM ASC
+                    LIMIT 1
+                ) AS DS_IMAGEM
+            FROM produto p
+            INNER JOIN marca m ON m.ID_MARCA = p.ID_MARCA
+            INNER JOIN categoria c ON c.ID_CATEGORIA = p.ID_CATEGORIA
+            WHERE p.FL_ATIVO = 1
+            AND m.FL_ATIVO = 1
+            AND c.FL_ATIVO = 1";
 
-    if ($categoria) {
-        $nomeCategoria = $categoria["NM_CATEGORIA"];
-    } else {
-        $categoriaSelecionada = null;
+    $parametros = [];
+
+    if ($busca !== "") {
+        $sql .= " AND (p.NM_PRODUTO LIKE :busca OR m.NM_MARCA LIKE :busca OR c.NM_CATEGORIA LIKE :busca)";
+        $parametros[":busca"] = "%" . $busca . "%";
     }
+
+    if ($categoriaSelecionada) {
+        $sql .= " AND p.ID_CATEGORIA = :categoria";
+        $parametros[":categoria"] = $categoriaSelecionada;
+    }
+
+    if ($marcaSelecionada) {
+        $sql .= " AND p.ID_MARCA = :marca";
+        $parametros[":marca"] = $marcaSelecionada;
+    }
+
+    $ordemSql = [
+        "recentes" => "p.ID_PRODUTO DESC",
+        "nome" => "p.NM_PRODUTO ASC",
+        "precoMenor" => "p.VL_PRODUTO ASC, p.NM_PRODUTO ASC",
+        "precoMaior" => "p.VL_PRODUTO DESC, p.NM_PRODUTO ASC"
+    ];
+
+    $sql .= " ORDER BY " . $ordemSql[$ordenacao];
+
+    $consulta = $pdo->prepare($sql);
+
+    foreach ($parametros as $chave => $valor) {
+        $tipo = in_array($chave, [":categoria", ":marca"], true) ? PDO::PARAM_INT : PDO::PARAM_STR;
+        $consulta->bindValue($chave, $valor, $tipo);
+    }
+
+    $consulta->execute();
+    $produtos = $consulta->fetchAll(PDO::FETCH_ASSOC);
+} catch (Throwable $e) {
+    error_log("[Loja] " . $e->getMessage());
+    $produtos = [];
 }
 
-/* Busca os produtos ativos disponíveis na loja. */
-$sql = "SELECT
-            p.ID_PRODUTO,
-            p.NM_PRODUTO,
-            p.DS_PRODUTO,
-            p.VL_PRODUTO,
-            p.QT_ESTOQUE,
-            m.NM_MARCA,
-            c.NM_CATEGORIA,
-            (
-                SELECT pi.DS_IMAGEM
-                FROM produto_imagem pi
-                WHERE pi.ID_PRODUTO = p.ID_PRODUTO
-                ORDER BY pi.FL_PRINCIPAL DESC, pi.NR_ORDEM ASC
-                LIMIT 1
-            ) AS DS_IMAGEM
-        FROM produto p
-        INNER JOIN marca m ON m.ID_MARCA = p.ID_MARCA
-        INNER JOIN categoria c ON c.ID_CATEGORIA = p.ID_CATEGORIA
-        WHERE p.FL_ATIVO = 1
-        AND m.FL_ATIVO = 1
-        AND c.FL_ATIVO = 1";
-
-/* Aplica o filtro de categoria quando necessário. */
-if ($categoriaSelecionada) {
-    $sql .= " AND p.ID_CATEGORIA = :categoria";
+function urlLojaComFiltro($baseUrl, $parametros)
+{
+    $parametros = array_filter($parametros, fn($valor) => $valor !== null && $valor !== "");
+    return $baseUrl . "/loja" . ($parametros ? "?" . http_build_query($parametros) : "");
 }
-
-$sql .= " ORDER BY p.NM_PRODUTO";
-
-/* Executa a consulta dos produtos. */
-$consulta = $pdo->prepare($sql);
-
-if ($categoriaSelecionada) {
-    $consulta->bindValue(":categoria", $categoriaSelecionada, PDO::PARAM_INT);
-}
-
-$consulta->execute();
-
-/* Guarda os produtos encontrados. */
-$produtos = $consulta->fetchAll(PDO::FETCH_ASSOC);
 ?>
 
-<div class="container py-5">
-    <div class="colab">
-        <div class="card shadow">
-            <div class="card-header text-center">
-                <h1>Loja</h1>
-                <p><?= htmlspecialchars($nomeCategoria) ?></p>
-            </div>
+<section class="lojaPaginaNova">
+    <header class="lojaCabecalhoNovo">
+        <span class="lojaEtiquetaNova">EXPLORE O COVIL</span>
+        <h1>Todos os produtos</h1>
+        <p>Dragões, personagens e relíquias escolhidos para colecionadores de Westeros.</p>
+    </header>
 
-            <div class="card-body p-4">
-                <?php if (count($produtos) > 0): ?>
-                    <div class="row g-4 listaProdutos">
-                        <?php foreach ($produtos as $produto): ?>
-                            <div class="col-12 col-md-6 col-lg-4 produtoColuna">
-                                <div class="produtoCard">
-                                    <div class="produtoImagem">
+    <div class="lojaCategoriasRapidas">
+        <a href="<?= $baseUrl ?>/loja" class="<?= !$categoriaSelecionada ? "ativo" : "" ?>">Todos</a>
 
-                                        <!-- Mostra a imagem principal do produto. -->
-                                        <?php if (!empty($produto["DS_IMAGEM"])): ?>
-                                            <img
-                                                src="<?= htmlspecialchars($produto["DS_IMAGEM"]) ?>"
-                                                alt="<?= htmlspecialchars($produto["NM_PRODUTO"]) ?>">
-                                        <?php else: ?>
-                                            <span>Nenhuma imagem cadastrada.</span>
-                                        <?php endif; ?>
-
-                                    </div>
-
-                                    <div class="produtoInformacoes">
-                                        <h3>
-                                            <?= htmlspecialchars($produto["NM_PRODUTO"]) ?>
-                                        </h3>
-
-                                        <p class="produtoMarca">
-                                            <?= htmlspecialchars($produto["NM_MARCA"]) ?>
-                                        </p>
-
-                                        <p class="produtoCategoria">
-                                            <?= htmlspecialchars($produto["NM_CATEGORIA"]) ?>
-                                        </p>
-
-                                        <?php if (!empty($produto["DS_PRODUTO"])): ?>
-                                            <p class="produtoDescricao">
-                                                <?= htmlspecialchars($produto["DS_PRODUTO"]) ?>
-                                            </p>
-                                        <?php endif; ?>
-
-                                        <div class="produtoPreco">
-                                            R$ <?= number_format((float)$produto["VL_PRODUTO"], 2, ",", ".") ?>
-                                        </div>
-
-                                        <?php if ((int)$produto["QT_ESTOQUE"] > 0): ?>
-                                            <p class="produtoDisponivel">
-                                                Em estoque
-                                            </p>
-                                        <?php else: ?>
-                                            <p class="produtoEsgotado">
-                                                Produto esgotado
-                                            </p>
-                                        <?php endif; ?>
-
-                                        <div class="produtoListaBotoes">
-
-                                            <!-- Acessa os detalhes do produto. -->
-                                            <a
-                                                href="produto?id=<?= (int)$produto["ID_PRODUTO"] ?>"
-                                                class="btn botaoCovil">
-                                                Ver produto
-                                            </a>
-
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        <?php endforeach; ?>
-                    </div>
-                <?php else: ?>
-                    <div class="produtoVazio">
-                        <h3>Nenhum produto encontrado</h3>
-                        <p>
-                            Não existem produtos disponíveis nesta categoria no momento.
-                        </p>
-                    </div>
-                <?php endif; ?>
-            </div>
-        </div>
+        <?php foreach ($categoriasLoja as $categoria): ?>
+            <a
+                href="<?= htmlspecialchars(urlLojaComFiltro($baseUrl, ["categoria" => (int)$categoria["ID_CATEGORIA"]])) ?>"
+                class="<?= $categoriaSelecionada === (int)$categoria["ID_CATEGORIA"] ? "ativo" : "" ?>">
+                <?= htmlspecialchars($categoria["NM_CATEGORIA"]) ?>
+            </a>
+        <?php endforeach; ?>
     </div>
-</div>
+
+    <form class="lojaFiltrosNovos" method="get" action="<?= $baseUrl ?>/loja">
+        <div class="lojaBuscaNova">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <input
+                type="search"
+                name="q"
+                value="<?= htmlspecialchars($busca) ?>"
+                placeholder="Pesquisar produtos...">
+        </div>
+
+        <select name="categoria" aria-label="Filtrar por categoria">
+            <option value="">Todas as categorias</option>
+            <?php foreach ($categoriasLoja as $categoria): ?>
+                <option
+                    value="<?= (int)$categoria["ID_CATEGORIA"] ?>"
+                    <?= $categoriaSelecionada === (int)$categoria["ID_CATEGORIA"] ? "selected" : "" ?>>
+                    <?= htmlspecialchars($categoria["NM_CATEGORIA"]) ?>
+                </option>
+            <?php endforeach; ?>
+        </select>
+
+        <select name="marca" aria-label="Filtrar por marca">
+            <option value="">Todas as marcas</option>
+            <?php foreach ($marcasLoja as $marca): ?>
+                <option
+                    value="<?= (int)$marca["ID_MARCA"] ?>"
+                    <?= $marcaSelecionada === (int)$marca["ID_MARCA"] ? "selected" : "" ?>>
+                    <?= htmlspecialchars($marca["NM_MARCA"]) ?>
+                </option>
+            <?php endforeach; ?>
+        </select>
+
+        <select name="ordenar" aria-label="Ordenar produtos">
+            <option value="recentes" <?= $ordenacao === "recentes" ? "selected" : "" ?>>Mais recentes</option>
+            <option value="nome" <?= $ordenacao === "nome" ? "selected" : "" ?>>Nome A–Z</option>
+            <option value="precoMenor" <?= $ordenacao === "precoMenor" ? "selected" : "" ?>>Menor preço</option>
+            <option value="precoMaior" <?= $ordenacao === "precoMaior" ? "selected" : "" ?>>Maior preço</option>
+        </select>
+
+        <button type="submit" class="lojaBotaoFiltrar">Aplicar</button>
+
+        <?php if ($busca !== "" || $categoriaSelecionada || $marcaSelecionada || $ordenacao !== "recentes"): ?>
+            <a href="<?= $baseUrl ?>/loja" class="lojaLimparFiltros">Limpar</a>
+        <?php endif; ?>
+    </form>
+
+    <div class="lojaResultadoLinha">
+        <p><?= count($produtos) ?> produto(s) encontrado(s)</p>
+    </div>
+
+    <?php if (count($produtos) > 0): ?>
+        <div class="lojaGradeNova">
+            <?php foreach ($produtos as $indice => $produto): ?>
+                <article class="lojaProdutoCardNovo" data-aos="fade-up" data-aos-delay="<?= min(($indice % 4) * 70, 210) ?>">
+                    <a
+                        href="<?= $baseUrl ?>/produto?id=<?= (int)$produto["ID_PRODUTO"] ?>"
+                        class="lojaProdutoImagemNova">
+
+                        <?php if (!empty($produto["DS_IMAGEM"]) && imagemProdutoExiste($produto["DS_IMAGEM"])): ?>
+                            <?php
+                            $urlImagem = urlImagemProduto($produto["DS_IMAGEM"]);
+                            $versaoImagem = versaoImagemProduto($produto["DS_IMAGEM"]);
+                            ?>
+                            <img
+                                src="<?= htmlspecialchars($urlImagem) ?><?= $versaoImagem !== "" ? "?v=" . urlencode($versaoImagem) : "" ?>"
+                                alt="<?= htmlspecialchars($produto["NM_PRODUTO"]) ?>"
+                                loading="lazy">
+                        <?php else: ?>
+                            <div class="lojaProdutoSemImagemNova">
+                                <i class="fa-solid fa-dragon"></i>
+                            </div>
+                        <?php endif; ?>
+
+                        <?php if ((int)$produto["QT_ESTOQUE"] <= 0): ?>
+                            <span class="lojaProdutoSeloNovo esgotado">Esgotado</span>
+                        <?php elseif ((int)$produto["QT_ESTOQUE"] <= 3): ?>
+                            <span class="lojaProdutoSeloNovo ultimas">Últimas unidades</span>
+                        <?php else: ?>
+                            <span class="lojaProdutoSeloNovo">Disponível</span>
+                        <?php endif; ?>
+                    </a>
+
+                    <div class="lojaProdutoConteudoNovo">
+                        <p class="lojaProdutoCategoriaNova">
+                            <?= htmlspecialchars($produto["NM_CATEGORIA"]) ?>
+                        </p>
+
+                        <h2>
+                            <a href="<?= $baseUrl ?>/produto?id=<?= (int)$produto["ID_PRODUTO"] ?>">
+                                <?= htmlspecialchars($produto["NM_PRODUTO"]) ?>
+                            </a>
+                        </h2>
+
+                        <p class="lojaProdutoMarcaNova">
+                            <?= htmlspecialchars($produto["NM_MARCA"]) ?>
+                        </p>
+
+                        <div class="lojaProdutoPrecoNova">
+                            R$ <?= number_format((float)$produto["VL_PRODUTO"], 2, ",", ".") ?>
+                        </div>
+
+                        <div class="lojaProdutoAcoesNovas">
+                            <?php if ((int)$produto["QT_ESTOQUE"] > 0): ?>
+                                <a
+                                    href="<?= $baseUrl ?>/carrinho/adicionar?id=<?= (int)$produto["ID_PRODUTO"] ?>"
+                                    class="lojaAdicionarCarrinho">
+                                    <i class="fa-solid fa-cart-plus"></i>
+                                    Adicionar
+                                </a>
+                            <?php else: ?>
+                                <span class="lojaAdicionarCarrinho desativado">Indisponível</span>
+                            <?php endif; ?>
+
+                            <a
+                                href="<?= $baseUrl ?>/produto?id=<?= (int)$produto["ID_PRODUTO"] ?>"
+                                class="lojaVerProduto"
+                                aria-label="Ver <?= htmlspecialchars($produto["NM_PRODUTO"]) ?>">
+                                <i class="fa-solid fa-arrow-right"></i>
+                            </a>
+                        </div>
+                    </div>
+                </article>
+            <?php endforeach; ?>
+        </div>
+    <?php else: ?>
+        <div class="lojaVaziaNova">
+            <i class="fa-solid fa-dragon"></i>
+            <h2>Nenhum produto encontrado</h2>
+            <p>Tente remover os filtros ou pesquisar por outro nome.</p>
+            <a href="<?= $baseUrl ?>/loja" class="lojaBotaoFiltrar">Ver todos</a>
+        </div>
+    <?php endif; ?>
+</section>

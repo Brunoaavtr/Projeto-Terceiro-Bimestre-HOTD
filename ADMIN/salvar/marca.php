@@ -1,132 +1,114 @@
 <?php
+/*
+    Processa o cadastro de uma nova marca.
 
-/* Verifica se o usuário é administrador. */
+    Este arquivo valida o administrador, nome e imagem; impede nomes duplicados;
+    salva a imagem em IMG/marcas; cadastra a marca no banco e remove o arquivo
+    caso o INSERT falhe. Todas as falhas retornam para o formulário com uma
+    mensagem SweetAlert, evitando a antiga tela em branco da rota salvar/marca.
+*/
+
 if (!isset($_SESSION["tipo"]) || (int)$_SESSION["tipo"] !== 2) {
-    header("Location: home");
+    header("Location: " . $baseUrl . "/home");
     exit;
 }
 
-/* Verifica se o formulário foi enviado por POST. */
 if ($_SERVER["REQUEST_METHOD"] !== "POST") {
-    header("Location: cadastrarMarca");
+    header("Location: " . $baseUrl . "/cadastrarMarca");
     exit;
 }
 
-/* Pega o nome da marca enviado pelo formulário. */
 $nome = trim($_POST["nome"] ?? "");
 
 if ($nome === "") {
     mensagem("Erro", "Digite o nome da marca.", "error", "cadastrarMarca");
-    exit;
 }
 
-/* Verifica se uma imagem foi enviada. */
-if (!isset($_FILES["imagem"]) || $_FILES["imagem"]["error"] !== UPLOAD_ERR_OK) {
+if (!isset($_FILES["imagem"])) {
     mensagem("Erro", "Selecione uma imagem para a marca.", "error", "cadastrarMarca");
-    exit;
 }
 
 $imagem = $_FILES["imagem"];
 
-/* Verifica o tamanho da imagem. */
-if ($imagem["size"] > 5 * 1024 * 1024) {
-    mensagem("Erro", "A imagem deve ter no máximo 5 MB.", "error", "cadastrarMarca");
-    exit;
+$mensagensUpload = [
+    UPLOAD_ERR_INI_SIZE => "A imagem ultrapassa o limite de upload configurado no PHP.",
+    UPLOAD_ERR_FORM_SIZE => "A imagem ultrapassa o tamanho permitido pelo formulário.",
+    UPLOAD_ERR_PARTIAL => "A imagem foi enviada apenas parcialmente. Tente novamente.",
+    UPLOAD_ERR_NO_FILE => "Selecione uma imagem para a marca.",
+    UPLOAD_ERR_NO_TMP_DIR => "A pasta temporária de upload não está disponível.",
+    UPLOAD_ERR_CANT_WRITE => "O servidor não conseguiu gravar a imagem.",
+    UPLOAD_ERR_EXTENSION => "Uma extensão do PHP interrompeu o upload da imagem."
+];
+
+if ($imagem["error"] !== UPLOAD_ERR_OK) {
+    $texto = $mensagensUpload[$imagem["error"]] ?? "Não foi possível receber a imagem.";
+    mensagem("Erro no upload", $texto, "error", "cadastrarMarca");
 }
 
-/* Verifica a extensão da imagem. */
+if ((int)$imagem["size"] <= 0 || (int)$imagem["size"] > 5 * 1024 * 1024) {
+    mensagem("Erro", "A imagem deve ter no máximo 5 MB.", "error", "cadastrarMarca");
+}
+
 $extensao = strtolower(pathinfo($imagem["name"], PATHINFO_EXTENSION));
 $extensoesPermitidas = ["jpg", "jpeg", "png", "webp"];
 
-if (!in_array($extensao, $extensoesPermitidas)) {
-    mensagem(
-        "Erro",
-        "Formato de imagem não permitido. Use JPG, JPEG, PNG ou WEBP.",
-        "error",
-        "cadastrarMarca"
-    );
-    exit;
+if (!in_array($extensao, $extensoesPermitidas, true)) {
+    mensagem("Erro", "Formato não permitido. Use JPG, JPEG, PNG ou WEBP.", "error", "cadastrarMarca");
 }
 
-/* Verifica se a marca já está cadastrada. */
-$sqlVerificar = "SELECT ID_MARCA
-                 FROM marca
-                 WHERE NM_MARCA = :nome";
+$dadosImagem = @getimagesize($imagem["tmp_name"]);
+$tiposPermitidos = ["image/jpeg", "image/png", "image/webp"];
 
-$consultaVerificar = $pdo->prepare($sqlVerificar);
-$consultaVerificar->bindValue(":nome", $nome, PDO::PARAM_STR);
-$consultaVerificar->execute();
-
-if ($consultaVerificar->fetch()) {
-    mensagem(
-        "Atenção",
-        "Essa marca já está cadastrada.",
-        "warning",
-        "cadastrarMarca"
-    );
-    exit;
+if ($dadosImagem === false || !in_array($dadosImagem["mime"] ?? "", $tiposPermitidos, true)) {
+    mensagem("Erro", "O arquivo selecionado não é uma imagem válida.", "error", "cadastrarMarca");
 }
 
-/* Define a pasta onde a imagem será salva. */
-$pastaMarcas = __DIR__ . "/../../IMG/marcas/";
+try {
+    $sqlVerificar = "SELECT ID_MARCA FROM marca WHERE NM_MARCA = :nome LIMIT 1";
+    $consultaVerificar = $pdo->prepare($sqlVerificar);
+    $consultaVerificar->bindValue(":nome", $nome, PDO::PARAM_STR);
+    $consultaVerificar->execute();
 
-if (!is_dir($pastaMarcas)) {
-    mkdir($pastaMarcas, 0777, true);
+    if ($consultaVerificar->fetch()) {
+        mensagem("Atenção", "Essa marca já está cadastrada.", "warning", "cadastrarMarca");
+    }
+
+    $pastaMarcas = __DIR__ . "/../../IMG/marcas/";
+
+    if (!is_dir($pastaMarcas) && !mkdir($pastaMarcas, 0777, true)) {
+        throw new RuntimeException("Não foi possível criar a pasta IMG/marcas.");
+    }
+
+    if (!is_writable($pastaMarcas)) {
+        throw new RuntimeException("A pasta IMG/marcas não possui permissão de escrita.");
+    }
+
+    $nomeImagem = uniqid("marca_", true) . "." . $extensao;
+    $caminhoImagem = $pastaMarcas . $nomeImagem;
+
+    if (!move_uploaded_file($imagem["tmp_name"], $caminhoImagem)) {
+        throw new RuntimeException("Não foi possível mover a imagem enviada para IMG/marcas.");
+    }
+
+    try {
+        $caminhoBanco = "IMG/marcas/" . $nomeImagem;
+        $sql = "INSERT INTO marca (NM_MARCA, FL_ATIVO, DS_IMAGEM)
+                VALUES (:nome, 1, :imagem)";
+
+        $consulta = $pdo->prepare($sql);
+        $consulta->bindValue(":nome", $nome, PDO::PARAM_STR);
+        $consulta->bindValue(":imagem", $caminhoBanco, PDO::PARAM_STR);
+        $consulta->execute();
+    } catch (Throwable $e) {
+        if (file_exists($caminhoImagem)) {
+            unlink($caminhoImagem);
+        }
+        throw $e;
+    }
+
+    mensagem("Marca cadastrada!", "A marca foi cadastrada com sucesso.", "success", "marcas");
+} catch (Throwable $e) {
+    error_log("[Cadastro de marca] " . $e->getMessage());
+    mensagem("Erro", "Não foi possível cadastrar a marca. Verifique o banco e as permissões da pasta de imagens.", "error", "cadastrarMarca");
 }
-
-/* Cria o nome e o caminho da imagem. */
-$nomeImagem = uniqid("marca_", true) . "." . $extensao;
-$caminhoImagem = $pastaMarcas . $nomeImagem;
-
-/* Salva a imagem na pasta de marcas. */
-if (!move_uploaded_file($imagem["tmp_name"], $caminhoImagem)) {
-    mensagem(
-        "Erro",
-        "Não foi possível salvar a imagem da marca.",
-        "error",
-        "cadastrarMarca"
-    );
-    exit;
-}
-
-/* Define o caminho da imagem que será salvo no banco. */
-$caminhoBanco = "IMG/marcas/" . $nomeImagem;
-
-/* Cadastra a marca no banco de dados. */
-$sql = "INSERT INTO marca (
-            NM_MARCA,
-            FL_ATIVO,
-            DS_IMAGEM
-        ) VALUES (
-            :nome,
-            1,
-            :imagem
-        )";
-
-$consulta = $pdo->prepare($sql);
-$consulta->bindValue(":nome", $nome, PDO::PARAM_STR);
-$consulta->bindValue(":imagem", $caminhoBanco, PDO::PARAM_STR);
-
-/* Verifica se a marca foi cadastrada. */
-if ($consulta->execute()) {
-    mensagem(
-        "Marca cadastrada!",
-        "A marca foi cadastrada com sucesso.",
-        "success",
-        "marcas"
-    );
-    exit;
-}
-
-/* Remove a imagem caso o cadastro no banco falhe. */
-if (file_exists($caminhoImagem)) {
-    unlink($caminhoImagem);
-}
-
-mensagem(
-    "Erro",
-    "Não foi possível cadastrar a marca.",
-    "error",
-    "cadastrarMarca"
-);
 ?>

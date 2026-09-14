@@ -1,7 +1,16 @@
 <?php
+/*
+    Exibe os detalhes de um produto ativo da loja.
 
-/* Verifica se o ID do produto foi informado. */
-$baseUrl = rtrim(dirname($_SERVER["SCRIPT_NAME"]), "/\\");
+    A página recebe o ID pela URL, busca produto, marca, categoria e até três
+    imagens cadastradas. Antes de montar o carrossel, o código confirma se cada
+    imagem realmente existe dentro do projeto. A URL da imagem é montada com o
+    caminho base do sistema para funcionar corretamente também com as URLs
+    amigáveis, evitando o problema de procurar IMG/produtos dentro da rota atual.
+
+    Se o produto não existir ou estiver desativado, o usuário volta para a loja.
+*/
+
 $id = filter_input(INPUT_GET, "id", FILTER_VALIDATE_INT);
 
 if (!$id) {
@@ -9,7 +18,6 @@ if (!$id) {
     exit;
 }
 
-/* Busca os dados do produto. */
 $sql = "SELECT
             p.ID_PRODUTO,
             p.NM_PRODUTO,
@@ -30,8 +38,6 @@ $sql = "SELECT
 $consulta = $pdo->prepare($sql);
 $consulta->bindValue(":id", $id, PDO::PARAM_INT);
 $consulta->execute();
-
-/* Guarda os dados encontrados. */
 $produto = $consulta->fetch(PDO::FETCH_ASSOC);
 
 if (!$produto) {
@@ -39,11 +45,7 @@ if (!$produto) {
     exit;
 }
 
-/* Busca as imagens do produto. */
-$sqlImagens = "SELECT
-                   DS_IMAGEM,
-                   FL_PRINCIPAL,
-                   NR_ORDEM
+$sqlImagens = "SELECT DS_IMAGEM, FL_PRINCIPAL, NR_ORDEM
                FROM produto_imagem
                WHERE ID_PRODUTO = :id
                ORDER BY FL_PRINCIPAL DESC, NR_ORDEM ASC
@@ -52,9 +54,8 @@ $sqlImagens = "SELECT
 $consultaImagens = $pdo->prepare($sqlImagens);
 $consultaImagens->bindValue(":id", $id, PDO::PARAM_INT);
 $consultaImagens->execute();
-
-/* Guarda as imagens encontradas. */
 $imagens = $consultaImagens->fetchAll(PDO::FETCH_ASSOC);
+$imagens = array_values(array_filter($imagens, fn($imagem) => imagemProdutoExiste($imagem["DS_IMAGEM"] ?? "")));
 ?>
 
 <div class="container py-5">
@@ -67,20 +68,25 @@ $imagens = $consultaImagens->fetchAll(PDO::FETCH_ASSOC);
                             <div id="carrosselProduto" class="carousel slide" data-bs-ride="carousel">
                                 <div class="carousel-inner produtoCarrossel">
                                     <?php foreach ($imagens as $indice => $imagem): ?>
+                                        <?php
+                                        $urlImagem = urlImagemProduto($imagem["DS_IMAGEM"]);
+                                        $versaoImagem = versaoImagemProduto($imagem["DS_IMAGEM"]);
+                                        ?>
                                         <div class="carousel-item <?= $indice === 0 ? "active" : "" ?>">
-                                            <img src="<?= htmlspecialchars($imagem["DS_IMAGEM"]) ?>" class="d-block w-100 produtoImagemGrande" alt="<?= htmlspecialchars($produto["NM_PRODUTO"]) ?>">
+                                            <img
+                                                src="<?= htmlspecialchars($urlImagem) ?><?= $versaoImagem !== "" ? "?v=" . urlencode($versaoImagem) : "" ?>"
+                                                class="d-block w-100 produtoImagemGrande"
+                                                alt="<?= htmlspecialchars($produto["NM_PRODUTO"]) ?>">
                                         </div>
                                     <?php endforeach; ?>
                                 </div>
 
                                 <?php if (count($imagens) > 1): ?>
-                                    <!-- Volta para a imagem anterior. -->
                                     <button class="carousel-control-prev" type="button" data-bs-target="#carrosselProduto" data-bs-slide="prev">
                                         <span class="carousel-control-prev-icon"></span>
                                         <span class="visually-hidden">Anterior</span>
                                     </button>
 
-                                    <!-- Avança para a próxima imagem. -->
                                     <button class="carousel-control-next" type="button" data-bs-target="#carrosselProduto" data-bs-slide="next">
                                         <span class="carousel-control-next-icon"></span>
                                         <span class="visually-hidden">Próximo</span>
@@ -88,7 +94,14 @@ $imagens = $consultaImagens->fetchAll(PDO::FETCH_ASSOC);
 
                                     <div class="carousel-indicators">
                                         <?php foreach ($imagens as $indice => $imagem): ?>
-                                            <button type="button" data-bs-target="#carrosselProduto" data-bs-slide-to="<?= $indice ?>" class="<?= $indice === 0 ? "active" : "" ?>" <?= $indice === 0 ? 'aria-current="true"' : "" ?> aria-label="Imagem <?= $indice + 1 ?>"></button>
+                                            <button
+                                                type="button"
+                                                data-bs-target="#carrosselProduto"
+                                                data-bs-slide-to="<?= $indice ?>"
+                                                class="<?= $indice === 0 ? "active" : "" ?>"
+                                                <?= $indice === 0 ? 'aria-current="true"' : "" ?>
+                                                aria-label="Imagem <?= $indice + 1 ?>">
+                                            </button>
                                         <?php endforeach; ?>
                                     </div>
                                 <?php endif; ?>
@@ -103,7 +116,6 @@ $imagens = $consultaImagens->fetchAll(PDO::FETCH_ASSOC);
                     <div class="col-12 col-lg-5">
                         <div class="produtoDetalhes">
                             <h1><?= htmlspecialchars($produto["NM_PRODUTO"]) ?></h1>
-
                             <p class="produtoMarca">Marca: <?= htmlspecialchars($produto["NM_MARCA"]) ?></p>
                             <p class="produtoCategoria">Categoria: <?= htmlspecialchars($produto["NM_CATEGORIA"]) ?></p>
 
@@ -121,18 +133,25 @@ $imagens = $consultaImagens->fetchAll(PDO::FETCH_ASSOC);
                             <div class="produtoEstoque">
                                 <?php if ((int)$produto["QT_ESTOQUE"] > 0): ?>
                                     <p>Em estoque: <?= (int)$produto["QT_ESTOQUE"] ?> unidade(s)</p>
-
-                                    <!-- Adiciona o produto ao carrinho. -->
-                                    <a href="<?= $baseUrl ?>/carrinho/adicionar?id=<?= (int)$produto["ID_PRODUTO"] ?>" class="btn botaoCovil">Adicionar ao carrinho</a>
                                 <?php else: ?>
                                     <p>Produto esgotado</p>
-                                    <button type="button" class="btn botaoCovil" disabled>Produto esgotado</button>
                                 <?php endif; ?>
                             </div>
 
-                            <div class="mt-4">
-                                <!-- Volta para a loja. -->
-                                <a href="<?= $baseUrl ?>/loja" class="btn botaoCovil">Voltar para a loja</a>
+                            <div class="produtoBotoes">
+                                <?php if ((int)$produto["QT_ESTOQUE"] > 0): ?>
+                                    <a href="<?= $baseUrl ?>/carrinho/adicionar?id=<?= (int)$produto["ID_PRODUTO"] ?>" class="btn botaoCovil">
+                                        Adicionar ao carrinho
+                                    </a>
+                                <?php else: ?>
+                                    <button type="button" class="btn botaoCovil" disabled>
+                                        Produto esgotado
+                                    </button>
+                                <?php endif; ?>
+
+                                <a href="<?= $baseUrl ?>/loja" class="btn botaoCovil">
+                                    Voltar para a loja
+                                </a>
                             </div>
                         </div>
                     </div>

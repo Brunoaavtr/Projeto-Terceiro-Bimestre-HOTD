@@ -60,6 +60,7 @@ $produtos = $consulta->fetchAll(PDO::FETCH_ASSOC);
                             $consultaImagens->execute();
 
                             $imagens = $consultaImagens->fetchAll(PDO::FETCH_ASSOC);
+                            $imagens = array_values(array_filter($imagens, fn($imagem) => imagemProdutoExiste($imagem["DS_IMAGEM"] ?? "")));
                             ?>
 
                             <div class="produtoCard">
@@ -69,7 +70,11 @@ $produtos = $consulta->fetchAll(PDO::FETCH_ASSOC);
                                             <div class="carousel-inner">
                                                 <?php foreach ($imagens as $indice => $imagem): ?>
                                                     <div class="carousel-item <?= $indice === 0 ? "active" : "" ?>">
-                                                        <img src="<?= htmlspecialchars($imagem["DS_IMAGEM"]) ?>" alt="<?= htmlspecialchars($produto["NM_PRODUTO"]) ?>">
+                                                        <?php
+                                                        $urlImagem = urlImagemProduto($imagem["DS_IMAGEM"]);
+                                                        $versaoImagem = versaoImagemProduto($imagem["DS_IMAGEM"]);
+                                                        ?>
+                                                        <img src="<?= htmlspecialchars($urlImagem) ?><?= $versaoImagem !== "" ? "?v=" . urlencode($versaoImagem) : "" ?>" alt="<?= htmlspecialchars($produto["NM_PRODUTO"]) ?>">
                                                     </div>
                                                 <?php endforeach; ?>
                                             </div>

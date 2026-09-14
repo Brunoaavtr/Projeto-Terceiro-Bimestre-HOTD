@@ -1,21 +1,6 @@
 <?php
-/*
-    Esta API disponibiliza os dados detalhados das vendas do Covil do Dragão.
-    Os dados são obtidos através da View vw_dashboard_vendas_detalhadas,
-    criada no MariaDB.
-
-    A View reúne informações de pedidos, produtos, marcas e categorias,
-    além da quantidade vendida, valor unitário, subtotal e data do pedido.
-
-    Os parâmetros de categoria e período podem ser enviados pela URL para
-    permitir que o TypeScript faça filtros específicos no dashboard.
-
-    O fluxo fica:
-    MariaDB → View → PHP → JSON → TypeScript
-*/
-
+/* Retorna os dados das vendas para o dashboard */
 header("Content-Type: application/json; charset=UTF-8");
-
 require_once(__DIR__ . "/../../config.php");
 
 try {
@@ -23,48 +8,49 @@ try {
     $dataInicial = filter_input(INPUT_GET, "data_inicial", FILTER_DEFAULT);
     $dataFinal = filter_input(INPUT_GET, "data_final", FILTER_DEFAULT);
 
-    if ($categoria === false || $categoria === null || $categoria <= 0) {
-        $categoria = null;
+    $categoria = ($categoria !== false && $categoria !== null && $categoria > 0) ? $categoria : null;
+    $dataInicial = ($dataInicial !== false && $dataInicial !== null && $dataInicial !== "") ? $dataInicial : null;
+    $dataFinal = ($dataFinal !== false && $dataFinal !== null && $dataFinal !== "") ? $dataFinal : null;
+
+    $condicoes = [];
+    $parametros = [];
+
+    if ($categoria !== null) {
+        $condicoes[] = "ID_CATEGORIA = :categoria";
+        $parametros[":categoria"] = $categoria;
     }
 
-    if ($dataInicial === false || $dataInicial === null || $dataInicial === "") {
-        $dataInicial = null;
+    if ($dataInicial !== null) {
+        $condicoes[] = "DATE(DT_PEDIDO) >= :dataInicial";
+        $parametros[":dataInicial"] = $dataInicial;
     }
 
-    if ($dataFinal === false || $dataFinal === null || $dataFinal === "") {
-        $dataFinal = null;
+    if ($dataFinal !== null) {
+        $condicoes[] = "DATE(DT_PEDIDO) <= :dataFinal";
+        $parametros[":dataFinal"] = $dataFinal;
     }
 
     $sql = "SELECT ID_PEDIDO, DT_PEDIDO, ID_PRODUTO, NM_PRODUTO, NM_MARCA,
                    ID_CATEGORIA, NM_CATEGORIA, QT_PRODUTO, VL_UNITARIO, VL_SUBTOTAL
-            FROM vw_dashboard_vendas_detalhadas
-            WHERE (:categoria IS NULL OR ID_CATEGORIA = :categoria)
-            AND (:dataInicial IS NULL OR DATE(DT_PEDIDO) >= :dataInicial)
-            AND (:dataFinal IS NULL OR DATE(DT_PEDIDO) <= :dataFinal)
-            ORDER BY DT_PEDIDO ASC, NM_PRODUTO ASC";
+            FROM vw_dashboard_vendas_detalhadas";
+
+    if (!empty($condicoes)) {
+        $sql .= " WHERE " . implode(" AND ", $condicoes);
+    }
+
+    $sql .= " ORDER BY DT_PEDIDO ASC, NM_PRODUTO ASC";
 
     $stmt = $pdo->prepare($sql);
 
-    if ($categoria === null) {
-        $stmt->bindValue(":categoria", null, PDO::PARAM_NULL);
-    } else {
-        $stmt->bindValue(":categoria", $categoria, PDO::PARAM_INT);
-    }
-
-    if ($dataInicial === null) {
-        $stmt->bindValue(":dataInicial", null, PDO::PARAM_NULL);
-    } else {
-        $stmt->bindValue(":dataInicial", $dataInicial, PDO::PARAM_STR);
-    }
-
-    if ($dataFinal === null) {
-        $stmt->bindValue(":dataFinal", null, PDO::PARAM_NULL);
-    } else {
-        $stmt->bindValue(":dataFinal", $dataFinal, PDO::PARAM_STR);
+    foreach ($parametros as $nome => $valor) {
+        if ($nome === ":categoria") {
+            $stmt->bindValue($nome, $valor, PDO::PARAM_INT);
+        } else {
+            $stmt->bindValue($nome, $valor, PDO::PARAM_STR);
+        }
     }
 
     $stmt->execute();
-
     $dados = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
     echo json_encode([
@@ -74,8 +60,8 @@ try {
         "data_final" => $dataFinal,
         "dados" => $dados
     ], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
-
 } catch (PDOException $e) {
+    error_log("Erro na API de vendas: " . $e->getMessage());
     http_response_code(500);
 
     echo json_encode([

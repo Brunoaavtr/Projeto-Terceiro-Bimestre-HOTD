@@ -1,28 +1,23 @@
 <?php
-
-/* Verifica se o usuário confirmou a saída da conta. */
+/* Verifica a saída do usuário */
 if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["sair"])) {
     session_unset();
     session_destroy();
-
-    /* Redireciona o usuário para o login. */
-    header("Location: login");
+    header("Location: {$baseUrl}/login");
     exit;
 }
 ?>
 
-<div class="container d-flex justify-content-center align-items-center" style="min-height: 70vh;">
-    <div class="card text-center shadow p-4" style="max-width: 500px; width: 100%;">
+<section class="paginaSair">
+    <div class="sairCard">
         <i class="fa-solid fa-door-open iconeSaida"></i>
-        <h2>Deseja deixar o Covil?</h2>
+        <h1>Deseja deixar o Covil?</h1>
         <p>Tem certeza que deseja sair da sua conta?</p>
-
-        <div class="d-flex justify-content-center gap-3 mt-3">
-            <a href="javascript:history.back()" class="btn btn-secondary">Voltar</a>
-
+        <div class="botoesSair">
+            <a href="javascript:history.back()" class="botaoVoltar">Voltar</a>
             <form method="post">
-                <button type="submit" name="sair" class="btn btn-danger">Sair</button>
+                <button type="submit" name="sair" class="botaoSair">Sair</button>
             </form>
         </div>
     </div>
-</div>
+</section>

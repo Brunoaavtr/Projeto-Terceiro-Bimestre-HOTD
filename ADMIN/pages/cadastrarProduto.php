@@ -41,7 +41,7 @@ $categorias = $consultaCategorias->fetchAll(PDO::FETCH_ASSOC);
 
             <div class="card-body p-4">
                 <!-- Formulário para cadastrar o produto. -->
-                <form method="post" action="index.php?param=salvar/produto" enctype="multipart/form-data" id="formularioProduto">
+                <form method="post" action="<?= $baseUrl ?>/index.php?param=salvar/produto" enctype="multipart/form-data" id="formularioProduto">
                     <div class="mb-4">
                         <div class="tituloCampoMarca">Nome do produto:</div>
                         <input type="text" name="nome" id="nome" class="form-control" placeholder="Digite o nome do produto" maxlength="150" required>

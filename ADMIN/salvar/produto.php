@@ -1,254 +1,243 @@
 <?php
+/*
+    Processa o cadastro de produtos do Covil do Dragão.
 
-/* Verifica se o usuário é administrador. */
+    O fluxo valida todos os campos, confirma se marca e categoria estão ativas,
+    verifica de 1 a 3 imagens reais nos formatos JPG, PNG ou WEBP e usa uma
+    transação para cadastrar produto e imagens juntos. Se qualquer etapa falhar,
+    o banco é revertido e os arquivos já criados são removidos.
+
+    Diferente da versão anterior, nenhuma validação falha em silêncio: o usuário
+    recebe uma mensagem dizendo qual dado ou upload precisa ser corrigido.
+*/
+
 if (!isset($_SESSION["tipo"]) || (int)$_SESSION["tipo"] !== 2) {
-    header("Location: home");
+    header("Location: " . $baseUrl . "/home");
     exit;
 }
 
-/* Verifica se o formulário foi enviado por POST. */
 if ($_SERVER["REQUEST_METHOD"] !== "POST") {
-    header("Location: cadastrarProduto");
+    header("Location: " . $baseUrl . "/cadastrarProduto");
     exit;
 }
 
-/* Pega os dados enviados pelo formulário. */
 $nome = trim($_POST["nome"] ?? "");
 $descricao = trim($_POST["descricao"] ?? "");
-$preco = $_POST["preco"] ?? "";
-$estoque = $_POST["estoque"] ?? "";
+$precoRecebido = trim((string)($_POST["preco"] ?? ""));
+$estoqueRecebido = trim((string)($_POST["estoque"] ?? ""));
 $marca = filter_input(INPUT_POST, "marca", FILTER_VALIDATE_INT);
 $categoria = filter_input(INPUT_POST, "categoria", FILTER_VALIDATE_INT);
 
-/* Valida o nome do produto. */
 if ($nome === "" || mb_strlen($nome) > 150) {
-    header("Location: cadastrarProduto");
-    exit;
+    mensagem("Dados inválidos", "Informe um nome de produto com até 150 caracteres.", "error", "cadastrarProduto");
 }
 
-/* Valida o tamanho da descrição. */
 if (mb_strlen($descricao) > 500) {
-    header("Location: cadastrarProduto");
-    exit;
+    mensagem("Dados inválidos", "A descrição pode ter no máximo 500 caracteres.", "error", "cadastrarProduto");
 }
 
-/* Valida o preço informado. */
-if ($preco === "" || !is_numeric($preco) || (float)$preco < 0) {
-    header("Location: cadastrarProduto");
-    exit;
+$precoNormalizado = str_replace(",", ".", $precoRecebido);
+
+if ($precoNormalizado === "" || !is_numeric($precoNormalizado) || (float)$precoNormalizado < 0) {
+    mensagem("Dados inválidos", "Informe um preço válido e maior ou igual a zero.", "error", "cadastrarProduto");
 }
 
-/* Valida a quantidade em estoque. */
-if ($estoque === "" || filter_var($estoque, FILTER_VALIDATE_INT) === false || (int)$estoque < 0) {
-    header("Location: cadastrarProduto");
-    exit;
+if ($estoqueRecebido === "" || filter_var($estoqueRecebido, FILTER_VALIDATE_INT) === false || (int)$estoqueRecebido < 0) {
+    mensagem("Dados inválidos", "Informe uma quantidade de estoque inteira e maior ou igual a zero.", "error", "cadastrarProduto");
 }
 
-$preco = (float)$preco;
-$estoque = (int)$estoque;
-
-/* Verifica se a marca e a categoria foram selecionadas. */
 if (!$marca || !$categoria) {
-    header("Location: cadastrarProduto");
-    exit;
+    mensagem("Dados inválidos", "Selecione uma marca e uma categoria.", "error", "cadastrarProduto");
 }
 
-/* Verifica se a marca está ativa. */
-$sql = "SELECT ID_MARCA
-        FROM marca
-        WHERE ID_MARCA = :id
-        AND FL_ATIVO = 1
-        LIMIT 1";
+$preco = number_format((float)$precoNormalizado, 2, ".", "");
+$estoque = (int)$estoqueRecebido;
 
-$consulta = $pdo->prepare($sql);
-$consulta->bindValue(":id", $marca, PDO::PARAM_INT);
-$consulta->execute();
+try {
+    $sql = "SELECT ID_MARCA FROM marca WHERE ID_MARCA = :id AND FL_ATIVO = 1 LIMIT 1";
+    $consulta = $pdo->prepare($sql);
+    $consulta->bindValue(":id", $marca, PDO::PARAM_INT);
+    $consulta->execute();
 
-if (!$consulta->fetch()) {
-    header("Location: cadastrarProduto");
-    exit;
+    if (!$consulta->fetch()) {
+        mensagem("Marca inválida", "A marca selecionada não existe ou está desativada.", "error", "cadastrarProduto");
+    }
+
+    $sql = "SELECT ID_CATEGORIA FROM categoria WHERE ID_CATEGORIA = :id AND FL_ATIVO = 1 LIMIT 1";
+    $consulta = $pdo->prepare($sql);
+    $consulta->bindValue(":id", $categoria, PDO::PARAM_INT);
+    $consulta->execute();
+
+    if (!$consulta->fetch()) {
+        mensagem("Categoria inválida", "A categoria selecionada não existe ou está desativada.", "error", "cadastrarProduto");
+    }
+} catch (Throwable $e) {
+    error_log("[Cadastro de produto - validação] " . $e->getMessage());
+    mensagem("Erro", "Não foi possível validar marca e categoria no banco de dados.", "error", "cadastrarProduto");
 }
 
-/* Verifica se a categoria está ativa. */
-$sql = "SELECT ID_CATEGORIA
-        FROM categoria
-        WHERE ID_CATEGORIA = :id
-        AND FL_ATIVO = 1
-        LIMIT 1";
-
-$consulta = $pdo->prepare($sql);
-$consulta->bindValue(":id", $categoria, PDO::PARAM_INT);
-$consulta->execute();
-
-if (!$consulta->fetch()) {
-    header("Location: cadastrarProduto");
-    exit;
+if (!isset($_FILES["imagens"]) || !is_array($_FILES["imagens"]["name"] ?? null)) {
+    mensagem("Imagens obrigatórias", "Selecione de 1 a 3 imagens para o produto.", "error", "cadastrarProduto");
 }
 
-/* Verifica se as imagens foram enviadas. */
-if (!isset($_FILES["imagens"]) || !is_array($_FILES["imagens"]["name"])) {
-    header("Location: cadastrarProduto");
-    exit;
-}
-
-/* Verifica a quantidade de imagens. */
-$quantidadeImagens = count($_FILES["imagens"]["name"]);
+$quantidadeImagens = count(array_filter($_FILES["imagens"]["name"], fn($nomeArquivo) => $nomeArquivo !== ""));
 
 if ($quantidadeImagens < 1 || $quantidadeImagens > 3) {
-    header("Location: cadastrarProduto");
-    exit;
+    mensagem("Quantidade de imagens inválida", "Selecione de 1 a 3 imagens.", "error", "cadastrarProduto");
 }
 
-/* Define os formatos e o tamanho máximo das imagens. */
 $extensoesPermitidas = ["jpg", "jpeg", "png", "webp"];
+$tiposPermitidos = ["image/jpeg", "image/png", "image/webp"];
 $tamanhoMaximo = 5 * 1024 * 1024;
 $arquivosSalvos = [];
+$tiposDetectados = [];
 
-/* Valida todas as imagens antes de iniciar o cadastro. */
+$mensagensUpload = [
+    UPLOAD_ERR_INI_SIZE => "Uma das imagens ultrapassa o limite de upload configurado no PHP. No XAMPP, confira upload_max_filesize no php.ini.",
+    UPLOAD_ERR_FORM_SIZE => "Uma das imagens ultrapassa o tamanho permitido pelo formulário.",
+    UPLOAD_ERR_PARTIAL => "Uma das imagens foi enviada apenas parcialmente. Tente novamente.",
+    UPLOAD_ERR_NO_FILE => "Selecione pelo menos uma imagem.",
+    UPLOAD_ERR_NO_TMP_DIR => "A pasta temporária de upload do PHP não está disponível.",
+    UPLOAD_ERR_CANT_WRITE => "O servidor não conseguiu gravar uma das imagens.",
+    UPLOAD_ERR_EXTENSION => "Uma extensão do PHP interrompeu o upload de uma das imagens."
+];
+
 foreach ($_FILES["imagens"]["tmp_name"] as $indice => $arquivoTemporario) {
-    $erro = $_FILES["imagens"]["error"][$indice];
-    $tamanho = $_FILES["imagens"]["size"][$indice];
+    if (($_FILES["imagens"]["name"][$indice] ?? "") === "") {
+        continue;
+    }
+
+    $erro = (int)$_FILES["imagens"]["error"][$indice];
+    $tamanho = (int)$_FILES["imagens"]["size"][$indice];
     $nomeOriginal = $_FILES["imagens"]["name"][$indice];
 
-    /* Verifica se a imagem foi recebida corretamente. */
     if ($erro !== UPLOAD_ERR_OK) {
-        header("Location: cadastrarProduto");
-        exit;
+        $texto = $mensagensUpload[$erro] ?? "Não foi possível receber uma das imagens.";
+        mensagem("Erro no upload", $texto, "error", "cadastrarProduto");
     }
 
-    /* Verifica o tamanho da imagem. */
     if ($tamanho <= 0 || $tamanho > $tamanhoMaximo) {
-        header("Location: cadastrarProduto");
-        exit;
+        mensagem("Imagem inválida", "Cada imagem deve ter no máximo 5 MB.", "error", "cadastrarProduto");
     }
 
-    /* Verifica a extensão da imagem. */
     $extensao = strtolower(pathinfo($nomeOriginal, PATHINFO_EXTENSION));
 
     if (!in_array($extensao, $extensoesPermitidas, true)) {
-        header("Location: cadastrarProduto");
-        exit;
+        mensagem("Formato inválido", "Use somente imagens JPG, JPEG, PNG ou WEBP.", "error", "cadastrarProduto");
     }
 
-    /* Verifica o tipo real da imagem. */
-    $tipoImagem = mime_content_type($arquivoTemporario);
-    $tiposPermitidos = ["image/jpeg", "image/png", "image/webp"];
+    $dadosImagem = @getimagesize($arquivoTemporario);
 
-    if (!in_array($tipoImagem, $tiposPermitidos, true)) {
-        header("Location: cadastrarProduto");
-        exit;
+    if ($dadosImagem === false || !in_array($dadosImagem["mime"] ?? "", $tiposPermitidos, true)) {
+        mensagem("Imagem inválida", "Um dos arquivos selecionados não é uma imagem válida.", "error", "cadastrarProduto");
     }
 
-    /* Verifica se o arquivo realmente é uma imagem. */
-    $arquivoImagem = @getimagesize($arquivoTemporario);
-
-    if ($arquivoImagem === false) {
-        header("Location: cadastrarProduto");
-        exit;
-    }
+    $tiposDetectados[$indice] = $dadosImagem["mime"];
 }
 
-/* Define a pasta onde as imagens serão salvas. */
 $pastaImagens = __DIR__ . "/../../IMG/produtos/";
 
-if (!is_dir($pastaImagens)) {
-    mkdir($pastaImagens, 0777, true);
+if (!is_dir($pastaImagens) && !mkdir($pastaImagens, 0777, true)) {
+    mensagem("Erro", "Não foi possível criar a pasta IMG/produtos.", "error", "cadastrarProduto");
+}
+
+if (!is_writable($pastaImagens)) {
+    mensagem("Erro", "A pasta IMG/produtos não possui permissão de escrita.", "error", "cadastrarProduto");
 }
 
 try {
-    /* Inicia a transação do cadastro. */
     $pdo->beginTransaction();
 
-    /* Cadastra o produto no banco de dados. */
     $sql = "INSERT INTO produto (
-                NM_PRODUTO,
-                DS_PRODUTO,
-                VL_PRODUTO,
-                QT_ESTOQUE,
-                FL_ATIVO,
-                ID_MARCA,
-                ID_CATEGORIA
+                NM_PRODUTO, DS_PRODUTO, VL_PRODUTO, QT_ESTOQUE,
+                FL_ATIVO, ID_MARCA, ID_CATEGORIA
             ) VALUES (
-                :nome,
-                :descricao,
-                :preco,
-                :estoque,
-                1,
-                :marca,
-                :categoria
+                :nome, :descricao, :preco, :estoque,
+                1, :marca, :categoria
             )";
 
     $consulta = $pdo->prepare($sql);
     $consulta->bindValue(":nome", $nome, PDO::PARAM_STR);
-    $consulta->bindValue(":descricao", $descricao, PDO::PARAM_STR);
-    $consulta->bindValue(":preco", $preco);
+    $consulta->bindValue(":descricao", $descricao !== "" ? $descricao : null, $descricao !== "" ? PDO::PARAM_STR : PDO::PARAM_NULL);
+    $consulta->bindValue(":preco", $preco, PDO::PARAM_STR);
     $consulta->bindValue(":estoque", $estoque, PDO::PARAM_INT);
     $consulta->bindValue(":marca", $marca, PDO::PARAM_INT);
     $consulta->bindValue(":categoria", $categoria, PDO::PARAM_INT);
     $consulta->execute();
 
-    /* Pega o ID do produto cadastrado. */
     $idProduto = (int)$pdo->lastInsertId();
 
-    /* Salva as imagens e relaciona cada uma ao produto. */
-    foreach ($_FILES["imagens"]["tmp_name"] as $indice => $arquivoTemporario) {
-        $nomeOriginal = $_FILES["imagens"]["name"][$indice];
-        $extensao = strtolower(pathinfo($nomeOriginal, PATHINFO_EXTENSION));
-        $nomeArquivo = "produto_" . $idProduto . "_" . uniqid("", true) . "." . $extensao;
-        $caminhoCompleto = $pastaImagens . $nomeArquivo;
-
-        /* Salva a imagem na pasta de produtos. */
-        if (!move_uploaded_file($arquivoTemporario, $caminhoCompleto)) {
-            throw new Exception("Não foi possível salvar uma das imagens.");
-        }
-
-        $caminhoBanco = "IMG/produtos/" . $nomeArquivo;
-
-        /* Cadastra a imagem no banco de dados. */
-        $sql = "INSERT INTO produto_imagem (
-                    ID_PRODUTO,
-                    DS_IMAGEM,
-                    FL_PRINCIPAL,
-                    NR_ORDEM
-                ) VALUES (
-                    :produto,
-                    :imagem,
-                    :principal,
-                    :ordem
-                )";
-
-        $consulta = $pdo->prepare($sql);
-        $consulta->bindValue(":produto", $idProduto, PDO::PARAM_INT);
-        $consulta->bindValue(":imagem", $caminhoBanco, PDO::PARAM_STR);
-        $consulta->bindValue(":principal", $indice === 0 ? 1 : 0, PDO::PARAM_INT);
-        $consulta->bindValue(":ordem", $indice + 1, PDO::PARAM_INT);
-        $consulta->execute();
-
-        /* Guarda o caminho dos arquivos criados. */
-        $arquivosSalvos[] = $caminhoCompleto;
+    if ($idProduto <= 0) {
+        throw new RuntimeException("O banco não retornou o ID do produto cadastrado.");
     }
 
-    /* Confirma o cadastro do produto e das imagens. */
+    $ordem = 1;
+
+    foreach ($_FILES["imagens"]["tmp_name"] as $indice => $arquivoTemporario) {
+        $nomeOriginal = $_FILES["imagens"]["name"][$indice] ?? "";
+
+        if ($nomeOriginal === "") {
+            continue;
+        }
+
+        $mimeDetectado = $tiposDetectados[$indice] ?? "";
+        $extensaoFinal = match ($mimeDetectado) {
+            "image/jpeg" => "jpg",
+            "image/png" => "png",
+            "image/webp" => "webp",
+            default => throw new RuntimeException("Formato de imagem não reconhecido no momento de salvar.")
+        };
+
+        $nomeArquivo = "produto_" . $idProduto . "_" . bin2hex(random_bytes(8)) . "." . $extensaoFinal;
+        $caminhoCompleto = $pastaImagens . $nomeArquivo;
+
+        if (!is_uploaded_file($arquivoTemporario)) {
+            throw new RuntimeException("O arquivo temporário da imagem não é um upload válido do PHP.");
+        }
+
+        if (!move_uploaded_file($arquivoTemporario, $caminhoCompleto)) {
+            throw new RuntimeException("Não foi possível mover uma das imagens para IMG/produtos.");
+        }
+
+        clearstatcache(true, $caminhoCompleto);
+
+        if (!is_file($caminhoCompleto) || filesize($caminhoCompleto) <= 0 || @getimagesize($caminhoCompleto) === false) {
+            throw new RuntimeException("A imagem foi recebida, mas não pôde ser confirmada após a gravação.");
+        }
+
+        @chmod($caminhoCompleto, 0644);
+        $arquivosSalvos[] = $caminhoCompleto;
+        $caminhoBanco = "IMG/produtos/" . $nomeArquivo;
+
+        $sqlImagem = "INSERT INTO produto_imagem (
+                          ID_PRODUTO, DS_IMAGEM, FL_PRINCIPAL, NR_ORDEM
+                      ) VALUES (
+                          :produto, :imagem, :principal, :ordem
+                      )";
+
+        $consultaImagem = $pdo->prepare($sqlImagem);
+        $consultaImagem->bindValue(":produto", $idProduto, PDO::PARAM_INT);
+        $consultaImagem->bindValue(":imagem", $caminhoBanco, PDO::PARAM_STR);
+        $consultaImagem->bindValue(":principal", $ordem === 1 ? 1 : 0, PDO::PARAM_INT);
+        $consultaImagem->bindValue(":ordem", $ordem, PDO::PARAM_INT);
+        $consultaImagem->execute();
+        $ordem++;
+    }
+
     $pdo->commit();
-
-    /* Volta para a lista de produtos. */
-    header("Location: produtos");
-    exit;
-
+    mensagem("Produto cadastrado!", "O produto e suas imagens foram cadastrados com sucesso.", "success", "produtos");
 } catch (Throwable $e) {
-    /* Desfaz o cadastro caso aconteça algum erro. */
     if ($pdo->inTransaction()) {
         $pdo->rollBack();
     }
 
-    /* Remove as imagens criadas caso o cadastro falhe. */
     foreach ($arquivosSalvos as $arquivo) {
         if (file_exists($arquivo)) {
             unlink($arquivo);
         }
     }
 
-    header("Location: cadastrarProduto");
-    exit;
+    error_log("[Cadastro de produto] " . $e->getMessage());
+    mensagem("Erro ao cadastrar", "Não foi possível cadastrar o produto. Verifique os dados, as imagens e a conexão com o banco.", "error", "cadastrarProduto");
 }
 ?>

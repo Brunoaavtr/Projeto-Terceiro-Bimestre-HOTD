@@ -86,7 +86,6 @@ $pedidos = $consulta->fetchAll(PDO::FETCH_ASSOC);
                                     </div>
 
                                     <div class="pedidoBotoes">
-                                        <a href="detalhesPedido?id=<?= (int)$pedido["ID_PEDIDO"] ?>" class="btn botaoCovil">Ver pedido</a>
                                         <a href="editarPedido?id=<?= (int)$pedido["ID_PEDIDO"] ?>" class="btn botaoCovil">Editar status</a>
                                     </div>
                                 </div>
